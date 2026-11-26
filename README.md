@@ -6,6 +6,8 @@ You add a game once. From then on, whenever it runs, the app removes the window 
 
 It works with any program that has a normal window. It can't do anything for games that only run in exclusive fullscreen; start those in windowed mode first.
 
+![The settings window with the General, Games and Hotkeys tabs](docs/settings-window.png)
+
 ## Download
 
 Get `ForceBorderlessWindowed.exe` from the [releases page](https://github.com/stuoningur/ForceBorderlessWindowed/releases). There is no installer: put the exe in a folder you keep it in and start it.
