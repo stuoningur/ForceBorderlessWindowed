@@ -1,0 +1,4 @@
+<Solution>
+  <Project Path="ForceBorderlessWindowed.Tests/ForceBorderlessWindowed.Tests.csproj" />
+  <Project Path="ForceBorderlessWindowed/ForceBorderlessWindowed.csproj" />
+</Solution>

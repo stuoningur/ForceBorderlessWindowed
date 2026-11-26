@@ -1,0 +1,818 @@
+﻿<Window x:Class="ForceBorderlessWindowed.Views.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:ForceBorderlessWindowed.ViewModels"
+        xmlns:views="clr-namespace:ForceBorderlessWindowed.Views"
+        xmlns:controls="clr-namespace:ForceBorderlessWindowed.Controls"
+        xmlns:res="clr-namespace:ForceBorderlessWindowed.Resources"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:SettingsViewModel}"
+        d:Title="{x:Static res:Strings.SettingsWindow_Title}"
+        Width="860" Height="660"
+        MinWidth="680" MinHeight="560"
+        WindowStartupLocation="CenterScreen">
+    <!-- Keyboard shortcuts (Save, remove game) are set up in code: they come from the settings (Hotkeys tab) -->
+
+    <Window.Resources>
+        <!-- Fluent's button only changes its background when disabled (barely visible), its text and icon kept the
+             normal color, so e.g. a disabled "Use current title" looked clickable. Content in the disabled text color.
+             Implicit, so the button styles below that are BasedOn the Button type get it too. -->
+        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+            <Style.Triggers>
+                <Trigger Property="IsEnabled" Value="False">
+                    <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                </Trigger>
+            </Style.Triggers>
+        </Style>
+
+        <!-- Looks like the other text fields: implicit styles only apply to their exact type, so it needs its own -->
+        <Style TargetType="controls:HotkeyBox" BasedOn="{StaticResource {x:Type TextBox}}">
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="ToolTip" Value="{x:Static res:Strings.Hotkeys_Box_Hint}" />
+        </Style>
+
+        <!-- Status badge on a game icon: same glyphs and colors as the InfoBar, smaller.
+             A ring in the window color separates it from the icon below. -->
+        <Style x:Key="BadgeGlyphStyle" TargetType="controls:FontIcon" BasedOn="{StaticResource IconTextStyle}">
+            <Setter Property="HorizontalAlignment" Value="Center" />
+            <Setter Property="FontSize" Value="12" />
+        </Style>
+
+        <!-- Grey tile with a generic game glyph, only while the game has no icon of its own.
+             Hidden otherwise: it would show through the transparent parts of the real icon. -->
+        <Style x:Key="IconPlaceholderStyle" TargetType="Border">
+            <Setter Property="CornerRadius" Value="4" />
+            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+            <Setter Property="Visibility" Value="Collapsed" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
+                    <Setter Property="Visibility" Value="Visible" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <!-- ================= Hints above everything: they affect all tabs ================= -->
+        <StackPanel>
+            <!-- settings.json was unreadable at startup: the defaults below aren't what the user had -->
+            <controls:InfoBar Margin="16,12,16,0" Severity="Error"
+                              Title="{x:Static res:Strings.Settings_LoadFailed_Title}"
+                              Message="{Binding LoadProblemMessage}"
+                              IsOpen="{Binding HasLoadProblem}">
+                <controls:InfoBar.ActionContent>
+                    <Button Content="{x:Static res:Strings.Tray_OpenSettingsFolder}"
+                            Command="{Binding OpenSettingsFolderCommand}" />
+                </controls:InfoBar.ActionContent>
+            </controls:InfoBar>
+
+            <!-- After an update: admin autostart would still start the old version. Applies right away (UAC), not on Save. -->
+            <controls:InfoBar Margin="16,12,16,0" Severity="Warning"
+                              Message="{Binding AdminCopyMessage}"
+                              IsOpen="{Binding IsAdminCopyOutdated}">
+                <controls:InfoBar.ActionContent>
+                    <Button Command="{Binding UpdateAdminCopyCommand}"
+                            AutomationProperties.Name="{x:Static res:Strings.Settings_AdminCopyUpdate}">
+                        <StackPanel Orientation="Horizontal">
+                            <!-- Shield icon, like Windows uses for actions that need admin rights -->
+                            <controls:FontIcon Margin="0,0,8,0" Style="{StaticResource IconTextStyle}" Text="&#xEA18;" />
+                            <TextBlock Text="{x:Static res:Strings.Settings_AdminCopyUpdate}" />
+                        </StackPanel>
+                    </Button>
+                </controls:InfoBar.ActionContent>
+            </controls:InfoBar>
+
+            <!-- On the General tab, its "Pause detection" row has the same button right below:
+                 the bar's own is hidden there (the bar stays, so the tabs don't jump when switching) -->
+            <controls:InfoBar Margin="16,12,16,0" Severity="Warning"
+                              Message="{x:Static res:Strings.Settings_PausedHint}"
+                              IsOpen="{Binding IsPaused}">
+                <controls:InfoBar.ActionContent>
+                    <Button MinWidth="88" Content="{x:Static res:Strings.Settings_Resume}"
+                            Command="{Binding ResumeCommand}">
+                        <Button.Style>
+                            <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                <Style.Triggers>
+                                    <DataTrigger Binding="{Binding SelectedIndex, ElementName=Tabs}" Value="0">
+                                        <Setter Property="Visibility" Value="Collapsed" />
+                                    </DataTrigger>
+                                </Style.Triggers>
+                            </Style>
+                        </Button.Style>
+                    </Button>
+                </controls:InfoBar.ActionContent>
+            </controls:InfoBar>
+        </StackPanel>
+
+        <TabControl x:Name="Tabs" Grid.Row="1" Margin="16,8,16,0" Style="{StaticResource SelectorTabControlStyle}">
+
+            <!-- ================= General: rows like the Windows Settings app ================= -->
+            <TabItem Header="{x:Static res:Strings.Settings_Tab_General}" controls:TabIcon.Glyph="&#xE713;">   <!-- Settings -->
+                <!-- Fluent scrollbars overlay the content: the right margin keeps them off the controls -->
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <!-- Capped width: in a very wide window, fields and texts would stretch over the whole screen.
+                         1000 like the content column of Windows Settings (+16 for the scrollbar), left-aligned under
+                         the tabs. A capped column, not MaxWidth: a stretched element with MaxWidth gets centered. -->
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MaxWidth="1016" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,16,16" DataContext="{Binding General}">
+                            <!-- Pause: the window's ViewModel, not General, because it applies immediately (not on Save).
+                                 Pause ⇄ Resume and the glyph follow the saved state, so tray, banner and this stay in sync. -->
+                            <!-- Top margin 16: every tab's content starts 16 below the tab strip (Games: its Grid margin) -->
+                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}" Margin="0,16,0,8"
+                                       Text="{x:Static res:Strings.Settings_Section_Detection}" />
+                            <controls:SettingsCard DataContext="{Binding DataContext, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                   Header="{x:Static res:Strings.Settings_PauseDetection}"
+                                                   Description="{x:Static res:Strings.Settings_PauseDetection_Description}">
+                                <controls:SettingsCard.Style>
+                                    <Style TargetType="controls:SettingsCard" BasedOn="{StaticResource {x:Type controls:SettingsCard}}">
+                                        <Setter Property="Glyph" Value="&#xE769;" />   <!-- Pause -->
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                                                <Setter Property="Glyph" Value="&#xE768;" />   <!-- Play -->
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </controls:SettingsCard.Style>
+                                <!-- Name = its own text: otherwise the card's label ("Pause detection") would be the name,
+                                     and screen readers couldn't tell Pause from Resume -->
+                                <Button MinWidth="96" Command="{Binding TogglePauseCommand}"
+                                        AutomationProperties.Name="{Binding Content, RelativeSource={RelativeSource Self}}">
+                                    <Button.Style>
+                                        <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                            <Setter Property="Content" Value="{x:Static res:Strings.Settings_Pause}" />
+                                            <Style.Triggers>
+                                                <DataTrigger Binding="{Binding IsPaused}" Value="True">
+                                                    <Setter Property="Content" Value="{x:Static res:Strings.Settings_Resume}" />
+                                                </DataTrigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Button.Style>
+                                </Button>
+                            </controls:SettingsCard>
+
+                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                                       Text="{x:Static res:Strings.Settings_Section_Appearance}" />
+
+                            <controls:SettingsCard Glyph="&#xE774;"
+                                                   Header="{x:Static res:Strings.Settings_Language_Label}"
+                                                   Description="{x:Static res:Strings.Settings_Language_Description}">
+                                <ComboBox Width="200"
+                                          ItemsSource="{Binding Languages}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedItem="{Binding SelectedLanguage}" />
+                            </controls:SettingsCard>
+
+                            <!-- The theme switches as soon as it is picked (preview); Close without saving reverts it -->
+                            <controls:SettingsCard Glyph="&#xE790;"
+                                                   Header="{x:Static res:Strings.Settings_Theme_Label}"
+                                                   Description="{x:Static res:Strings.Settings_Theme_Description}">
+                                <ComboBox Width="200"
+                                          ItemsSource="{Binding Themes}"
+                                          DisplayMemberPath="DisplayName"
+                                          SelectedItem="{Binding SelectedTheme}" />
+                            </controls:SettingsCard>
+
+                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                                       Text="{x:Static res:Strings.Settings_Section_Startup}" />
+
+                            <!-- Setting + sub-setting as one group; the sub-setting only applies while the first is on.
+                                 CheckBoxes (not toggle switches): nothing takes effect before Save. -->
+                            <controls:SettingsCard Style="{StaticResource SettingsCardGroupTopStyle}"
+                                                   Glyph="&#xE7E8;"
+                                                   Header="{x:Static res:Strings.Settings_StartWithWindows}"
+                                                   Description="{Binding StartWithWindowsDescription}"
+                                                   IsEnabled="{Binding IsAutostartKnown}">
+                                <CheckBox MinWidth="0" Padding="0" IsChecked="{Binding StartWithWindows}" />
+                            </controls:SettingsCard>
+                            <!-- Shield: the same glyph as "Restart as administrator", like Windows marks actions that need admin rights -->
+                            <controls:SettingsCard Style="{StaticResource SettingsCardGroupBottomStyle}"
+                                                   Glyph="&#xEA18;"
+                                                   Header="{x:Static res:Strings.Settings_StartAsAdmin}"
+                                                   Description="{Binding StartAsAdminDescription}"
+                                                   IsEnabled="{Binding CanEditStartAsAdmin}">
+                                <CheckBox MinWidth="0" Padding="0" IsChecked="{Binding StartAsAdmin}" />
+                            </controls:SettingsCard>
+
+                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                                       Text="{x:Static res:Strings.Settings_DefaultPlacement_Header}" />
+                            <Border Style="{StaticResource CardStyle}">
+                                <views:PlacementEditor DataContext="{Binding DefaultPlacement}" />
+                            </Border>
+
+                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                                       Text="{x:Static res:Strings.Settings_Section_About}" />
+                            <controls:SettingsCard Glyph="&#xE946;"
+                                                   Header="{x:Static res:Strings.AppName}"
+                                                   Description="{Binding AboutDescription}">
+                                <!-- Name = its own text: otherwise the card's header (the app name) would be the name -->
+                                <Button Content="{x:Static res:Strings.Settings_About_Licenses}" Click="OnShowLicensesClick"
+                                        AutomationProperties.Name="{Binding Content, RelativeSource={RelativeSource Self}}" />
+                            </controls:SettingsCard>
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+
+            <!-- ================= Games ================= -->
+            <TabItem Header="{x:Static res:Strings.Settings_Tab_Games}" controls:TabIcon.Glyph="&#xE7FC;">   <!-- Game -->
+                <!-- Capped like the other tabs: the details get at most the same width (list 260 + gap 16 + 1016) -->
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" MaxWidth="1292" />
+                    </Grid.ColumnDefinitions>
+                    <Grid Margin="0,16,0,0" DataContext="{Binding Games}">
+                        <!-- The list takes a third, between 200 and 260: in a narrow window the details keep enough room -->
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MinWidth="200" MaxWidth="260" />
+                            <ColumnDefinition Width="16" />
+                            <ColumnDefinition Width="2*" />
+                        </Grid.ColumnDefinitions>
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="*" />
+                            <RowDefinition Height="Auto" />
+                        </Grid.RowDefinitions>
+
+                        <!-- Master: list of games, in a card so it stands apart from the window background
+                             (in light mode the bare list was indistinguishable from it).
+                             The "remove game" shortcut (Del by default) is bound in code, see ApplyShortcuts. -->
+                        <Border Style="{StaticResource CardStyle}" Margin="0" Padding="0">
+                            <ListBox x:Name="GamesList"
+                                     ItemsSource="{Binding Profiles}"
+                                     SelectedItem="{Binding SelectedProfile}"
+                                     Background="Transparent" BorderThickness="0" Padding="0,4"
+                                     ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                                     AutomationProperties.Name="{x:Static res:Strings.Settings_Tab_Games}">
+                                <ListBox.ItemContainerStyle>
+                                    <!-- Windows 11 list look: subtle fill + a short accent bar on the left for the selected
+                                         entry, instead of a fully accent-colored block (on which dimmed text was hard to read).
+                                         AutomationProperties.Name: what a screen reader says (name, status, off, error);
+                                         without it, it would read the ViewModel's class name. -->
+                                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                        <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}" />
+                                        <Setter Property="Padding" Value="12,6" />
+                                        <Setter Property="Margin" Value="4,1" />
+                                        <!-- The margins keep the keyboard focus rectangle inside the list's scroll area,
+                                             which would otherwise clip it to a single line -->
+                                        <Setter Property="FocusVisualStyle" Value="{DynamicResource DefaultControlFocusVisualStyle}" />
+                                        <Setter Property="Template">
+                                            <Setter.Value>
+                                                <ControlTemplate TargetType="ListBoxItem">
+                                                    <Grid Background="Transparent">
+                                                        <Border x:Name="Fill" CornerRadius="4" Background="Transparent" />
+                                                        <Border x:Name="SelectionBar" Width="3" Height="16" CornerRadius="1.5"
+                                                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                                                Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                                                Visibility="Collapsed" />
+                                                        <ContentPresenter Margin="{TemplateBinding Padding}" />
+                                                    </Grid>
+                                                    <ControlTemplate.Triggers>
+                                                        <Trigger Property="IsMouseOver" Value="True">
+                                                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                                        </Trigger>
+                                                        <Trigger Property="IsSelected" Value="True">
+                                                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                                                            <Setter TargetName="SelectionBar" Property="Visibility" Value="Visible" />
+                                                        </Trigger>
+                                                        <MultiTrigger>
+                                                            <MultiTrigger.Conditions>
+                                                                <Condition Property="IsSelected" Value="True" />
+                                                                <Condition Property="IsMouseOver" Value="True" />
+                                                            </MultiTrigger.Conditions>
+                                                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+                                                        </MultiTrigger>
+                                                    </ControlTemplate.Triggers>
+                                                </ControlTemplate>
+                                            </Setter.Value>
+                                        </Setter>
+                                    </Style>
+                                </ListBox.ItemContainerStyle>
+                                <ListBox.ItemTemplate>
+                                    <DataTemplate DataType="{x:Type vm:GameProfileViewModel}">
+                                        <Grid Margin="0,2">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+
+                                            <!-- Program icon, a generic game icon if unknown, plus the status badge.
+                                                 Games that aren't applied: only the icon is faded (the text says "Off"),
+                                                 fading the text too made it too faint to read. -->
+                                            <Grid x:Name="IconArea" Width="32" Height="32" Margin="0,0,12,0" VerticalAlignment="Center">
+                                                <Border Style="{StaticResource IconPlaceholderStyle}">
+                                                    <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                               Text="&#xE7FC;" />
+                                                </Border>
+                                                <controls:DecorativeImage Source="{Binding Icon}" Width="32" Height="32"
+                                                       RenderOptions.BitmapScalingMode="HighQuality" />
+
+                                                <Grid x:Name="Badge" Width="16" Height="16" Margin="0,0,-4,-4"
+                                                      HorizontalAlignment="Right" VerticalAlignment="Bottom"
+                                                      Visibility="{Binding ShowStatusBadge, Converter={StaticResource BoolToVisibility}}"
+                                                      ToolTip="{Binding StatusText}">
+                                                    <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center"
+                                                               FontSize="16" Text="&#xF136;"
+                                                               Foreground="{DynamicResource SolidBackgroundFillColorBaseBrush}" />
+                                                    <controls:FontIcon x:Name="BadgeBackground" Style="{StaticResource BadgeGlyphStyle}"
+                                                               Text="&#xF136;"
+                                                               Foreground="{DynamicResource SystemFillColorNeutralBrush}" />
+                                                    <controls:FontIcon x:Name="BadgeGlyph" Style="{StaticResource BadgeGlyphStyle}"
+                                                               Text="&#xF13F;"
+                                                               Foreground="{DynamicResource TextFillColorInverseBrush}" />
+                                                </Grid>
+                                            </Grid>
+
+                                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                <DockPanel>
+                                                    <!-- Error marker: this game has an exe problem (details in its form) -->
+                                                    <controls:FontIcon DockPanel.Dock="Right" Margin="6,0,0,0"
+                                                               Style="{StaticResource IconTextStyle}" FontSize="14"
+                                                               Foreground="{DynamicResource SystemFillColorCriticalBrush}"
+                                                               Text="&#xE783;"
+                                                               Visibility="{Binding HasExecutableError, Converter={StaticResource BoolToVisibility}}" />
+                                                    <TextBlock x:Name="TitleText" Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                                </DockPanel>
+                                                <!-- Second line: exe name and title filter, plus "· Off" for games that aren't
+                                                     applied. Hidden when there's nothing to add to the name.
+                                                     "Off" is docked: when the line is too long, only the part before it is
+                                                     trimmed. Left-aligned, so "Off" follows the text instead of the right edge. -->
+                                                <DockPanel HorizontalAlignment="Left"
+                                                           Visibility="{Binding HasListSubtitle, Converter={StaticResource BoolToVisibility}}">
+                                                    <TextBlock DockPanel.Dock="Right" FontSize="12"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                               Text="{Binding ListOffText}" />
+                                                    <TextBlock FontSize="12" TextTrimming="CharacterEllipsis"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                               Text="{Binding ListSubtitle}" />
+                                                </DockPanel>
+                                            </StackPanel>
+                                        </Grid>
+                                        <DataTemplate.Triggers>
+                                            <DataTrigger Binding="{Binding Enabled}" Value="False">
+                                                <Setter TargetName="IconArea" Property="Opacity" Value="0.45" />
+                                                <Setter TargetName="TitleText" Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding StatusSeverity}" Value="{x:Static controls:InfoBarSeverity.Success}">
+                                                <Setter TargetName="BadgeBackground" Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                                <Setter TargetName="BadgeGlyph" Property="Text" Value="&#xF13E;" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding StatusSeverity}" Value="{x:Static controls:InfoBarSeverity.Warning}">
+                                                <Setter TargetName="BadgeBackground" Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                                <Setter TargetName="BadgeGlyph" Property="Text" Value="&#xF13C;" />
+                                            </DataTrigger>
+                                            <DataTrigger Binding="{Binding StatusSeverity}" Value="{x:Static controls:InfoBarSeverity.Error}">
+                                                <Setter TargetName="BadgeBackground" Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                                <Setter TargetName="BadgeGlyph" Property="Text" Value="&#xF13D;" />
+                                            </DataTrigger>
+                                        </DataTemplate.Triggers>
+                                    </DataTemplate>
+                                </ListBox.ItemTemplate>
+                            </ListBox>
+                        </Border>
+
+                        <!-- Wraps: with a narrow list and longer translations, Remove moves below Add instead of being cut off -->
+                        <WrapPanel Grid.Row="1" Margin="0,8,0,8" Orientation="Horizontal">
+                            <!-- Opens a menu with the running programs, built in code-behind (OnAddGameClick).
+                                 The chevron says "this opens a menu". -->
+                            <Button MinWidth="88" Margin="0,0,8,8" Click="OnAddGameClick"
+                                    AutomationProperties.Name="{Binding Source={x:Static res:Strings.Games_AddMenu}, Converter={x:Static views:AccessKeyConverter.Instance}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <controls:FontIcon Margin="0,0,8,0" Style="{StaticResource IconTextStyle}" Text="&#xE710;" />
+                                    <AccessText Text="{x:Static res:Strings.Games_AddMenu}" />
+                                    <controls:FontIcon Margin="8,0,0,0" Style="{StaticResource IconTextStyle}" FontSize="12" Text="&#xE70D;" />
+                                </StackPanel>
+                            </Button>
+                            <Button MinWidth="88" Margin="0,0,0,8" Command="{Binding RemoveCommand}"
+                                    AutomationProperties.Name="{Binding Source={x:Static res:Strings.Games_Remove}, Converter={x:Static views:AccessKeyConverter.Instance}}">
+                                <StackPanel Orientation="Horizontal">
+                                    <controls:FontIcon Margin="0,0,8,0" Style="{StaticResource IconTextStyle}" Text="&#xE74D;" />
+                                    <AccessText Text="{x:Static res:Strings.Games_Remove}" />
+                                </StackPanel>
+                            </Button>
+                        </WrapPanel>
+
+                        <!-- Empty state: what this tab is for and how to start -->
+                        <StackPanel Grid.Column="2" MaxWidth="360" Margin="0,0,16,0"
+                                    HorizontalAlignment="Center" VerticalAlignment="Center"
+                                    Visibility="{Binding IsEmpty, Converter={StaticResource BoolToVisibility}}">
+                            <controls:FontIcon HorizontalAlignment="Center" Style="{StaticResource IconTextStyle}" FontSize="48"
+                                       Foreground="{DynamicResource AccentTextFillColorPrimaryBrush}" Text="&#xE7FC;" />
+                            <TextBlock Margin="0,16,0,0" HorizontalAlignment="Center" TextAlignment="Center"
+                                       Style="{DynamicResource SubtitleTextBlockStyle}"
+                                       Text="{x:Static res:Strings.Games_Empty_Title}" />
+                            <TextBlock Margin="0,8,0,0" TextAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
+                                       Text="{x:Static res:Strings.Games_Empty_Message}" />
+                            <Button Margin="0,20,0,0" HorizontalAlignment="Center" MinWidth="120"
+                                    Style="{DynamicResource AccentButtonStyle}"
+                                    AutomationProperties.Name="{x:Static res:Strings.Games_Empty_Add}"
+                                    Click="OnAddGameClick">
+                                <StackPanel Orientation="Horizontal">
+                                    <controls:FontIcon Margin="0,0,8,0" Style="{StaticResource IconTextStyle}" Text="&#xE710;" />
+                                    <TextBlock Text="{x:Static res:Strings.Games_Empty_Add}" />
+                                    <controls:FontIcon Margin="8,0,0,0" Style="{StaticResource IconTextStyle}" FontSize="12" Text="&#xE70D;" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+
+                        <!-- Detail: the selected game.
+                             Hidden while nothing is selected: an explicit ContentTemplate is applied even when the
+                             content is null, and failed bindings would then show empty cards and warning bars. -->
+                        <ContentControl Grid.Column="2" Focusable="False" Content="{Binding SelectedProfile}">
+                            <ContentControl.Style>
+                                <Style TargetType="ContentControl">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding SelectedProfile}" Value="{x:Null}">
+                                            <Setter Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </ContentControl.Style>
+                            <ContentControl.ContentTemplate>
+                                <DataTemplate DataType="{x:Type vm:GameProfileViewModel}">
+                                    <!-- Back to the top for every other game, kept for the same game (see the handlers) -->
+                                    <ScrollViewer VerticalScrollBarVisibility="Auto"
+                                                  DataContextChanged="OnGameDetailsScrollDataContextChanged"
+                                                  ScrollChanged="OnGameDetailsScrollChanged">
+                                        <StackPanel Margin="0,0,16,16">
+                                            <!-- Header: which game this page is about -->
+                                            <Grid Margin="0,0,0,16">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="Auto" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid Width="40" Height="40" Margin="0,0,12,0">
+                                                    <Border Style="{StaticResource IconPlaceholderStyle}">
+                                                        <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center"
+                                                                   FontSize="20" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                   Text="&#xE7FC;" />
+                                                    </Border>
+                                                    <controls:DecorativeImage Source="{Binding Icon}" Width="40" Height="40"
+                                                           RenderOptions.BitmapScalingMode="HighQuality" />
+                                                </Grid>
+                                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                                    <TextBlock Style="{DynamicResource SubtitleTextBlockStyle}"
+                                                               Text="{Binding Title}" TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock FontSize="12" Foreground="{DynamicResource TextFillColorSecondaryBrush}">
+                                                        <TextBlock.Style>
+                                                            <Style TargetType="TextBlock">
+                                                                <Setter Property="Text" Value="{Binding NotRunningText}" />
+                                                                <Style.Triggers>
+                                                                    <DataTrigger Binding="{Binding IsRunning}" Value="True">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                    </DataTrigger>
+                                                                </Style.Triggers>
+                                                            </Style>
+                                                        </TextBlock.Style>
+                                                    </TextBlock>
+                                                </StackPanel>
+                                            </Grid>
+
+                                            <!-- Status of the running game: green when borderless, otherwise what's wrong
+                                                 and what to do -->
+                                            <controls:InfoBar Margin="0,0,0,12"
+                                                              IsOpen="{Binding IsRunning}"
+                                                              Severity="{Binding StatusSeverity}"
+                                                              Title="{Binding StatusText}"
+                                                              Message="{Binding ProblemText}">
+                                                <!-- Only for "runs as admin" while we don't. The command lives on the
+                                                     window's ViewModel, hence the binding via the Window.
+                                                     Disabled while there are unsaved changes (they'd be lost):
+                                                     the tooltip says why, also on the disabled button. -->
+                                                <Button Margin="0,8,0,2" HorizontalAlignment="Left"
+                                                        ToolTipService.ShowOnDisabled="True"
+                                                        ToolTip="{x:Static res:Strings.Games_RestartAsAdmin_Tooltip}"
+                                                        Command="{Binding DataContext.RestartAsAdminCommand, RelativeSource={RelativeSource AncestorType=Window}}"
+                                                        Visibility="{Binding CanRestartAsAdmin, Converter={StaticResource BoolToVisibility}, FallbackValue=Collapsed}"
+                                                        AutomationProperties.Name="{x:Static res:Strings.Games_RestartAsAdmin}">
+                                                    <StackPanel Orientation="Horizontal">
+                                                        <!-- Shield icon, like Windows uses for actions that need admin rights -->
+                                                        <controls:FontIcon Margin="0,0,8,0" Style="{StaticResource IconTextStyle}" Text="&#xEA18;" />
+                                                        <TextBlock Text="{x:Static res:Strings.Games_RestartAsAdmin}" />
+                                                    </StackPanel>
+                                                </Button>
+                                            </controls:InfoBar>
+
+                                            <!-- Headings above the cards, like on the General tab and in Windows Settings -->
+                                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}" Margin="0,4,0,8"
+                                                       Text="{x:Static res:Strings.Games_Section_Game}" />
+                                            <Border Style="{StaticResource CardStyle}">
+                                                <StackPanel>
+                                                    <controls:FieldLabel Content="{x:Static res:Strings.Games_DisplayName}"
+                                                                         Target="{Binding ElementName=DisplayNameBox}" />
+                                                    <TextBox x:Name="DisplayNameBox" Margin="0,4,0,12"
+                                                             Text="{Binding DisplayName, UpdateSourceTrigger=PropertyChanged}" />
+
+                                                    <controls:FieldLabel Content="{x:Static res:Strings.Games_ExecutableName}"
+                                                                         Target="{Binding ElementName=ExecutableBox}" />
+                                                    <!-- Field first, button second (a Grid, not a right-docked DockPanel):
+                                                         tab and screen reader order follow the element order -->
+                                                    <Grid Margin="0,4,0,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBox x:Name="ExecutableBox"
+                                                                 Text="{Binding ExecutableName, UpdateSourceTrigger=PropertyChanged}" />
+                                                        <Button Grid.Column="1" Margin="8,0,0,0" MinWidth="88"
+                                                                Content="{x:Static res:Strings.Games_Browse}"
+                                                                Click="OnBrowseExecutableClick" />
+                                                    </Grid>
+                                                    <!-- The field's own error, right where it can be fixed (also red border + screen reader text) -->
+                                                    <controls:FieldError Text="{Binding ExecutableError}"
+                                                                         Target="{Binding ElementName=ExecutableBox}" />
+
+                                                    <!-- Narrowing down which program/window this game takes, for exe names that several
+                                                         programs share. Off without a known file: the box says how to get one. -->
+                                                    <!-- Name set here: with a panel as content, a screen reader got no name at all -->
+                                                    <CheckBox x:Name="MatchPathBox" Margin="0,12,0,0"
+                                                              IsChecked="{Binding MatchExecutablePath}"
+                                                              IsEnabled="{Binding CanMatchExecutablePath}"
+                                                              AutomationProperties.Name="{Binding Source={x:Static res:Strings.Games_MatchExecutablePath}, Converter={x:Static views:AccessKeyConverter.Instance}}"
+                                                              AutomationProperties.HelpText="{Binding ExecutablePathText}">
+                                                        <StackPanel>
+                                                            <AccessText Text="{x:Static res:Strings.Games_MatchExecutablePath}" />
+                                                            <TextBlock Style="{StaticResource SecondaryTextStyle}" Margin="0,2,0,0"
+                                                                       TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"
+                                                                       Text="{Binding ExecutablePathText}"
+                                                                       ToolTip="{Binding ExecutablePathText}" />
+                                                        </StackPanel>
+                                                    </CheckBox>
+
+                                                    <controls:FieldLabel Margin="0,12,0,0"
+                                                                         Content="{x:Static res:Strings.Games_WindowTitleContains}"
+                                                                         Target="{Binding ElementName=WindowTitleBox}" />
+                                                    <!-- Empty field: the running window's title greyed in it as a suggestion,
+                                                         the button copies it in (it isn't filled in by itself: titles change).
+                                                         Secondary text color, like WinUI placeholders: tertiary was ~2:1 in light mode. -->
+                                                    <Grid Margin="0,4,0,0">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <Grid>
+                                                            <TextBox x:Name="WindowTitleBox"
+                                                                     Text="{Binding WindowTitleContains, UpdateSourceTrigger=PropertyChanged}"
+                                                                     AutomationProperties.HelpText="{x:Static res:Strings.Games_WindowTitleContains_Hint}" />
+                                                            <TextBlock x:Name="WindowTitleSuggestion" IsHitTestVisible="False"
+                                                                       Margin="11,0,11,0" VerticalAlignment="Center"
+                                                                       TextTrimming="CharacterEllipsis"
+                                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                                       Text="{Binding CurrentWindowTitle}">
+                                                                <TextBlock.Style>
+                                                                    <Style TargetType="TextBlock">
+                                                                        <Setter Property="Visibility" Value="Collapsed" />
+                                                                        <Style.Triggers>
+                                                                            <DataTrigger Binding="{Binding Text, ElementName=WindowTitleBox}" Value="">
+                                                                                <Setter Property="Visibility" Value="Visible" />
+                                                                            </DataTrigger>
+                                                                        </Style.Triggers>
+                                                                    </Style>
+                                                                </TextBlock.Style>
+                                                            </TextBlock>
+                                                        </Grid>
+                                                        <Button Grid.Column="1" Margin="8,0,0,0" MinWidth="88"
+                                                                Command="{Binding UseCurrentTitleCommand}"
+                                                                ToolTip="{Binding CurrentWindowTitle}"
+                                                                AutomationProperties.Name="{Binding Source={x:Static res:Strings.Games_UseCurrentTitle}, Converter={x:Static views:AccessKeyConverter.Instance}}"
+                                                                AutomationProperties.HelpText="{Binding CurrentWindowTitle}">
+                                                            <AccessText Text="{x:Static res:Strings.Games_UseCurrentTitle}" />
+                                                        </Button>
+                                                    </Grid>
+                                                    <TextBlock Style="{StaticResource SecondaryTextStyle}" Margin="0,4,0,0" TextWrapping="Wrap"
+                                                               Text="{x:Static res:Strings.Games_WindowTitleContains_Hint}" />
+
+                                                    <CheckBox Margin="0,12,0,0"
+                                                              Content="{x:Static res:Strings.Games_Enabled}"
+                                                              IsChecked="{Binding Enabled}" />
+                                                </StackPanel>
+                                            </Border>
+
+                                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                                                       Text="{x:Static res:Strings.Games_Placement_Header}" />
+                                            <Border Style="{StaticResource CardStyle}">
+                                                <views:PlacementEditor DataContext="{Binding Placement}" />
+                                            </Border>
+
+                                            <!-- Optional extras that only apply while the game is in the foreground -->
+                                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                                                       Text="{x:Static res:Strings.Games_Section_WhilePlaying}" />
+                                            <controls:SettingsCard Glyph="&#xE962;"
+                                                                   Header="{x:Static res:Strings.Games_LockCursor}"
+                                                                   Description="{x:Static res:Strings.Games_LockCursor_Hint}">
+                                                <CheckBox MinWidth="0" Padding="0" IsChecked="{Binding LockCursor}" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Glyph="&#xE7C4;"
+                                                                   Header="{x:Static res:Strings.Games_HideTaskbar}"
+                                                                   Description="{x:Static res:Strings.Games_HideTaskbar_Hint}">
+                                                <CheckBox MinWidth="0" Padding="0" IsChecked="{Binding HideTaskbar}" />
+                                            </controls:SettingsCard>
+                                            <controls:SettingsCard Glyph="&#xE7F4;"
+                                                                   Header="{x:Static res:Strings.Games_BlackBackground}"
+                                                                   Description="{x:Static res:Strings.Games_BlackBackground_Hint}">
+                                                <CheckBox MinWidth="0" Padding="0" IsChecked="{Binding BlackBackground}" />
+                                            </controls:SettingsCard>
+                                        </StackPanel>
+                                    </ScrollViewer>
+                                </DataTemplate>
+                            </ContentControl.ContentTemplate>
+                        </ContentControl>
+
+                        <!-- Problem that blocks saving; may concern a game that isn't selected, so it's shown here -->
+                        <controls:InfoBar Grid.Row="1" Grid.Column="2" Margin="0,8,16,16" Severity="Error"
+                                          Message="{Binding ValidationMessage}"
+                                          IsOpen="{Binding HasValidationMessage}" />
+                    </Grid>
+                </Grid>
+            </TabItem>
+
+            <!-- ================= Hotkeys: applied on Save, like the other tabs ================= -->
+            <TabItem Header="{x:Static res:Strings.Settings_Tab_Hotkeys}" controls:TabIcon.Glyph="&#xE765;">   <!-- KeyboardClassic -->
+                <TabItem.Resources>
+                    <!-- One row: the recorder field, ✕ (global: turn off) or ↺ (window: back to default), and its error.
+                         The field's name is the row's header: the card's label targets the whole panel, not the field. -->
+                    <DataTemplate x:Key="HotkeyRowTemplate" DataType="{x:Type vm:HotkeyEditorViewModel}">
+                        <!-- While recording, the description makes room for what the field expects and which keys still
+                             navigate (they can't be recorded): the field looks like a text box. Same cell, so the
+                             rows below don't jump when the field gets the focus. -->
+                        <controls:SettingsCard Glyph="{Binding Glyph}" Header="{Binding Header}" Description="{Binding Description}"
+                                               AlternateDescription="{x:Static res:Strings.Hotkeys_Box_Recording}"
+                                               IsAlternateDescriptionShown="{Binding IsKeyboardFocused, ElementName=Box}">
+                            <StackPanel Width="280">
+                                <!-- Field first, buttons after it (a Grid, not right-docked): tab and screen reader order.
+                                     Only one of the two buttons is visible. -->
+                                <Grid>
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="Auto" />
+                                        <ColumnDefinition Width="Auto" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- Help text: the row's description plus how the field works (the tooltip) -->
+                                    <controls:HotkeyBox x:Name="Box" Hotkey="{Binding Value}"
+                                                        AutomationProperties.Name="{Binding Header}">
+                                        <AutomationProperties.HelpText>
+                                            <MultiBinding StringFormat="{}{0} {1}">
+                                                <Binding Path="Description" />
+                                                <Binding Source="{x:Static res:Strings.Hotkeys_Box_Hint}" />
+                                            </MultiBinding>
+                                        </AutomationProperties.HelpText>
+                                    </controls:HotkeyBox>
+                                    <Button Grid.Column="1" Margin="8,0,0,0" MinWidth="0" Padding="9,6"
+                                            Command="{Binding ClearCommand}"
+                                            Visibility="{Binding IsGlobal, Converter={StaticResource BoolToVisibility}}"
+                                            ToolTip="{x:Static res:Strings.Hotkeys_Clear}"
+                                            AutomationProperties.Name="{x:Static res:Strings.Hotkeys_Clear}">
+                                        <controls:FontIcon Style="{StaticResource IconTextStyle}" FontSize="14" Text="&#xE711;" />
+                                    </Button>
+                                    <Button Grid.Column="2" Margin="8,0,0,0" MinWidth="0" Padding="9,6"
+                                            Command="{Binding ResetCommand}"
+                                            Visibility="{Binding IsWindowShortcut, Converter={StaticResource BoolToVisibility}}"
+                                            ToolTip="{x:Static res:Strings.Hotkeys_Reset}"
+                                            AutomationProperties.Name="{x:Static res:Strings.Hotkeys_Reset}">
+                                        <controls:FontIcon Style="{StaticResource IconTextStyle}" FontSize="14" Text="&#xE777;" />
+                                    </Button>
+                                </Grid>
+                                <controls:FieldError Text="{Binding Message}" IsWarning="{Binding IsWarning}"
+                                                     Target="{Binding ElementName=Box}" />
+                            </StackPanel>
+                        </controls:SettingsCard>
+                    </DataTemplate>
+                </TabItem.Resources>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto">
+                    <Grid>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*" MaxWidth="1016" />
+                        </Grid.ColumnDefinitions>
+                        <StackPanel Margin="0,0,16,16" DataContext="{Binding Hotkeys}">
+                            <!-- A saved global hotkey that Windows refused: it silently wouldn't work otherwise -->
+                            <controls:InfoBar Margin="0,16,0,4" Severity="Warning"
+                                              Message="{Binding RegistrationProblem}"
+                                              IsOpen="{Binding HasRegistrationProblem}" />
+
+                            <!-- Top margin 16 like the other tabs; with the bar open it's 20 below the bar, like between sections -->
+                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}" Margin="0,16,0,8"
+                                       Text="{x:Static res:Strings.Hotkeys_Section_Global}" />
+                            <TextBlock Margin="0,-4,0,8" Style="{StaticResource SecondaryTextStyle}"
+                                       Text="{x:Static res:Strings.Hotkeys_Section_Global_Description}" />
+                            <ItemsControl Focusable="False" ItemsSource="{Binding Global}"
+                                          ItemTemplate="{StaticResource HotkeyRowTemplate}" />
+                            <!-- What the in-use check can't see, and that the hotkey takes the keys away from the game -->
+                            <TextBlock Margin="0,8,0,0" Style="{StaticResource SecondaryTextStyle}" TextWrapping="Wrap"
+                                       Text="{x:Static res:Strings.Hotkeys_Section_Global_Limits}" />
+                            <controls:SettingsCard Margin="0,8,0,0" Glyph="&#xE8BD;"
+                                                   Header="{x:Static res:Strings.Hotkeys_ShowMessages}"
+                                                   Description="{x:Static res:Strings.Hotkeys_ShowMessages_Description}">
+                                <CheckBox MinWidth="0" Padding="0" IsChecked="{Binding ShowMessages}" />
+                            </controls:SettingsCard>
+                            <controls:SettingsCard Glyph="&#xE767;"
+                                                   Header="{x:Static res:Strings.Hotkeys_PlaySounds}"
+                                                   Description="{x:Static res:Strings.Hotkeys_PlaySounds_Description}">
+                                <CheckBox MinWidth="0" Padding="0" IsChecked="{Binding PlaySounds}" />
+                            </controls:SettingsCard>
+
+                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                                       Text="{x:Static res:Strings.Hotkeys_Section_Window}" />
+                            <ItemsControl Focusable="False" ItemsSource="{Binding WindowShortcuts}"
+                                          ItemTemplate="{StaticResource HotkeyRowTemplate}" />
+                        </StackPanel>
+                    </Grid>
+                </ScrollViewer>
+            </TabItem>
+        </TabControl>
+
+        <!-- ================= Footer: applies to all tabs ================= -->
+        <Border Grid.Row="2" Padding="16,12"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                Background="{DynamicResource LayerFillColorDefaultBrush}">
+            <!-- Actions first (tab order), messages second: they move above the actions when too narrow next to them -->
+            <controls:FooterPanel>
+                <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                    <!-- Most settings only take effect on Save: say when something isn't applied yet.
+                         Both share one cell: an edit hides the confirmation, a complete save the hint. -->
+                    <Grid Margin="0,0,16,0" VerticalAlignment="Center">
+                        <TextBlock Style="{StaticResource SecondaryTextStyle}"
+                                   Text="{x:Static res:Strings.Settings_UnsavedChangesHint}"
+                                   Visibility="{Binding HasUnsavedChanges, Converter={StaticResource BoolToVisibility}}" />
+
+                        <!-- After a complete save, for a few seconds (the ViewModel hides it): fades in, holds, fades out.
+                             Announced to screen readers in code (SettingsWindow.xaml.cs). -->
+                        <StackPanel x:Name="SavedConfirmation" Orientation="Horizontal"
+                                    Visibility="{Binding IsSavedConfirmationVisible, Converter={StaticResource BoolToVisibility}}">
+                            <StackPanel.Style>
+                                <Style TargetType="StackPanel">
+                                    <Style.Triggers>
+                                        <DataTrigger Binding="{Binding IsSavedConfirmationVisible}" Value="True">
+                                            <DataTrigger.EnterActions>
+                                                <BeginStoryboard x:Name="SavedConfirmationFade">
+                                                    <Storyboard>
+                                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetProperty="Opacity">
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:0" Value="0" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:0.167" Value="1" KeySpline="0,0,0,1" />
+                                                            <DiscreteDoubleKeyFrame KeyTime="0:0:2.6" Value="1" />
+                                                            <SplineDoubleKeyFrame KeyTime="0:0:3" Value="0" KeySpline="0,0,0,1" />
+                                                        </DoubleAnimationUsingKeyFrames>
+                                                    </Storyboard>
+                                                </BeginStoryboard>
+                                            </DataTrigger.EnterActions>
+                                            <DataTrigger.ExitActions>
+                                                <RemoveStoryboard BeginStoryboardName="SavedConfirmationFade" />
+                                            </DataTrigger.ExitActions>
+                                        </DataTrigger>
+                                    </Style.Triggers>
+                                </Style>
+                            </StackPanel.Style>
+                            <!-- Same success color as the InfoBar; the checkmark shape carries the meaning without color -->
+                            <controls:FontIcon Margin="0,0,6,0" VerticalAlignment="Center"
+                                               Style="{StaticResource IconTextStyle}" Text="&#xE73E;"
+                                               Foreground="{DynamicResource SystemFillColorSuccessBrush}" />
+                            <TextBlock VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
+                                       Text="{x:Static res:Strings.Settings_SavedConfirmation}" />
+                        </StackPanel>
+                    </Grid>
+                    <!-- "Save & apply", not just "Save": saving is also what makes the changes take effect.
+                         AccessText instead of a plain string: the Fluent accent button template doesn't turn
+                         "_Save" into an access key by itself (the normal button template does) -->
+                    <Button MinWidth="96"
+                            Style="{DynamicResource AccentButtonStyle}"
+                            Command="{Binding SaveCommand}"
+                            ToolTip="{Binding SaveShortcutText}"
+                            AutomationProperties.Name="{Binding Source={x:Static res:Strings.Settings_SaveAndApply}, Converter={x:Static views:AccessKeyConverter.Instance}}">
+                        <AccessText Text="{x:Static res:Strings.Settings_SaveAndApply}" />
+                    </Button>
+                    <!-- IsCancel: Esc triggers this button -->
+                    <Button MinWidth="96" Margin="8,0,0,0" IsCancel="True"
+                            Content="{x:Static res:Strings.Common_Close}"
+                            Click="OnCloseClick" />
+                </StackPanel>
+
+                <StackPanel VerticalAlignment="Center">
+                    <controls:InfoBar HorizontalAlignment="Left" Padding="12,2"
+                                      Message="{x:Static res:Strings.Settings_RestartRequired}"
+                                      IsOpen="{Binding IsRestartRequired}">
+                        <controls:InfoBar.ActionContent>
+                            <Button Content="{x:Static res:Strings.Settings_RestartNow}"
+                                    Command="{Binding RestartCommand}" />
+                        </controls:InfoBar.ActionContent>
+                    </controls:InfoBar>
+
+                    <!-- Save went through only partly (UAC declined): say what was and wasn't saved -->
+                    <controls:InfoBar HorizontalAlignment="Left" Padding="12,2" Severity="Warning"
+                                      Message="{Binding SaveProblem}"
+                                      IsOpen="{Binding HasSaveProblem}" />
+                </StackPanel>
+            </controls:FooterPanel>
+        </Border>
+    </Grid>
+</Window>

@@ -1,0 +1,502 @@
+<!--
+    App-wide styles on top of the Fluent theme. All colors come from Fluent brushes via DynamicResource,
+    so light/dark mode, high contrast and the accent color keep working.
+    Styles for Fluent's own controls are keyed (not implicit) so they never compete with the Fluent theme's
+    implicit styles. Our own controls (namespace controls:) get implicit styles: nothing else styles them.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                    xmlns:controls="clr-namespace:ForceBorderlessWindowed.Controls">
+
+    <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
+
+    <FontFamily x:Key="IconFontFamily">Segoe Fluent Icons, Segoe MDL2 Assets</FontFamily>
+
+    <!-- A single Segoe Fluent Icons glyph -->
+    <Style x:Key="IconTextStyle" TargetType="controls:FontIcon">
+        <Setter Property="FontFamily" Value="{StaticResource IconFontFamily}" />
+        <Setter Property="FontSize" Value="16" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+
+    <!-- Tab header in Windows 11 "SelectorBar" style: secondary text; the selected one gets primary SemiBold text
+         and a short accent pill centered on the divider line below -->
+    <Style x:Key="SelectorTabItemStyle" TargetType="TabItem">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Padding" Value="12,8,12,10" />
+        <!-- The template is replaced, so set the Fluent keyboard focus rectangle explicitly -->
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource DefaultControlFocusVisualStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabItem">
+                    <!-- Layout rounding: at 125 % etc. the 3 px pill and the 1 px divider stay sharp -->
+                    <Grid Margin="0,0,4,0" UseLayoutRounding="True">
+                        <!-- Hover background; Transparent (not null) so the whole area is clickable -->
+                        <Border x:Name="Background" Margin="0,0,0,4" CornerRadius="4" Background="Transparent" />
+                        <StackPanel Margin="{TemplateBinding Padding}" HorizontalAlignment="Center" Orientation="Horizontal">
+                            <!-- Optional icon (controls:TabIcon.Glyph); takes the text color, so it dims and lights up with it -->
+                            <controls:FontIcon x:Name="Icon" Margin="0,0,8,0" Style="{StaticResource IconTextStyle}"
+                                               Text="{TemplateBinding controls:TabIcon.Glyph}" />
+                            <Grid>
+                                <!-- Invisible SemiBold copy: keeps the width of the bold text, so the tabs
+                                     don't shift when the selection changes -->
+                                <ContentPresenter ContentSource="Header" Visibility="Hidden"
+                                                  TextElement.FontWeight="SemiBold" />
+                                <ContentPresenter x:Name="Header" ContentSource="Header" RecognizesAccessKey="True"
+                                                  HorizontalAlignment="Center" />
+                            </Grid>
+                        </StackPanel>
+                        <!-- Short pill like WinUI's SelectorBar, on the divider line (the bottom pixel row of the tab).
+                             It grows from the center when selected (see the triggers). -->
+                        <Border x:Name="Indicator" Width="16" Height="3" VerticalAlignment="Bottom"
+                                CornerRadius="1.5" Visibility="Hidden"
+                                RenderTransformOrigin="0.5,0.5"
+                                Background="{DynamicResource AccentFillColorDefaultBrush}">
+                            <Border.RenderTransform>
+                                <ScaleTransform />
+                            </Border.RenderTransform>
+                        </Border>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Background" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Indicator" Property="Visibility" Value="Visible" />
+                            <!-- Keeps the hover background, like a selected NavigationView item -->
+                            <Setter TargetName="Background" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="Header" Property="TextElement.FontWeight" Value="SemiBold" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+                        </Trigger>
+                        <!-- Hover on the selected tab: one step stronger, so the pointer still gets feedback -->
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="True" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Background" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+                        </MultiTrigger>
+                        <Trigger Property="controls:TabIcon.Glyph" Value="{x:Null}">
+                            <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <!-- Pressed: the window captures the mouse on a header click (SettingsWindow.OnTabHeaderMouseDown)
+                             and releases it on button up. Last, so it wins over hover and selected. -->
+                        <Trigger Property="IsMouseCaptured" Value="True">
+                            <Setter TargetName="Background" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorTertiaryBrush}" />
+                        </Trigger>
+                        <!-- Fluent "point to point" motion for the pill; skipped when animations are off in Windows
+                             (Settings → Accessibility → Visual effects) -->
+                        <MultiDataTrigger>
+                            <MultiDataTrigger.Conditions>
+                                <Condition Binding="{Binding IsSelected, RelativeSource={RelativeSource Self}}" Value="True" />
+                                <Condition Binding="{Binding Path=(SystemParameters.ClientAreaAnimation)}" Value="True" />
+                            </MultiDataTrigger.Conditions>
+                            <MultiDataTrigger.EnterActions>
+                                <BeginStoryboard>
+                                    <Storyboard>
+                                        <DoubleAnimationUsingKeyFrames Storyboard.TargetName="Indicator"
+                                                                       Storyboard.TargetProperty="RenderTransform.ScaleX"
+                                                                       Duration="0:0:0.25" FillBehavior="Stop">
+                                            <DiscreteDoubleKeyFrame KeyTime="0" Value="0" />
+                                            <SplineDoubleKeyFrame KeyTime="0:0:0.25" KeySpline="0,0,0,1" Value="1" />
+                                        </DoubleAnimationUsingKeyFrames>
+                                    </Storyboard>
+                                </BeginStoryboard>
+                            </MultiDataTrigger.EnterActions>
+                        </MultiDataTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Tab control without a frame: header row on a divider line, content below.
+         The selected tab's background box starts at the content's left edge, like the cards below. -->
+    <Style x:Key="SelectorTabControlStyle" TargetType="TabControl">
+        <Setter Property="ItemContainerStyle" Value="{StaticResource SelectorTabItemStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="TabControl">
+                    <DockPanel KeyboardNavigation.TabNavigation="Local">
+                        <Grid DockPanel.Dock="Top" UseLayoutRounding="True">
+                            <Border Height="1" VerticalAlignment="Bottom"
+                                    Background="{DynamicResource DividerStrokeColorDefaultBrush}" />
+                            <TabPanel IsItemsHost="True" KeyboardNavigation.TabIndex="1" />
+                        </Grid>
+                        <!-- Clips: the content slides in sideways on a tab change (SettingsWindow.PlayTabTransition) -->
+                        <ContentPresenter x:Name="PART_SelectedContentHost"
+                                          ContentSource="SelectedContent" ClipToBounds="True"
+                                          KeyboardNavigation.TabIndex="2" />
+                    </DockPanel>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Card: groups related settings, like in the Windows 11 Settings app -->
+    <!-- Same corner radius (4) as the settings cards, so all cards on a page match -->
+    <Style x:Key="CardStyle" TargetType="Border">
+        <Setter Property="Background" Value="{DynamicResource AppCardBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppCardStrokeBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Padding" Value="16" />
+        <Setter Property="Margin" Value="0" />
+    </Style>
+
+    <!-- Heading above a group of settings cards ("Body strong" in the Fluent type ramp) -->
+    <Style x:Key="SectionHeaderTextStyle" TargetType="TextBlock">
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Margin" Value="0,20,0,8" />
+    </Style>
+
+    <!-- Hints and previews below a control -->
+    <Style x:Key="SecondaryTextStyle" TargetType="TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+
+    <!-- ================= Our own controls ================= -->
+
+    <!-- Labels never had a Fluent style of their own here: plain text with access key support -->
+    <Style TargetType="controls:FieldLabel">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:FieldLabel">
+                    <!-- Wraps when it doesn't fit (e.g. a long card header in a narrow window): a string becomes
+                         an AccessText here, which otherwise would be cut off -->
+                    <ContentPresenter Margin="{TemplateBinding Padding}" RecognizesAccessKey="True">
+                        <ContentPresenter.Resources>
+                            <Style TargetType="AccessText">
+                                <Setter Property="TextWrapping" Value="Wrap" />
+                            </Style>
+                            <Style TargetType="TextBlock">
+                                <Setter Property="TextWrapping" Value="Wrap" />
+                            </Style>
+                        </ContentPresenter.Resources>
+                    </ContentPresenter>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- A field's own error, right below it: error glyph + text in the critical color -->
+    <Style TargetType="controls:FieldError">
+        <Setter Property="Margin" Value="0,4,0,0" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:FieldError">
+                    <DockPanel>
+                        <controls:FontIcon x:Name="Icon" DockPanel.Dock="Left" Margin="0,1,6,0" VerticalAlignment="Top"
+                                           Style="{StaticResource IconTextStyle}" FontSize="14"
+                                           Foreground="{TemplateBinding Foreground}" Text="&#xE783;" />
+                        <TextBlock TextWrapping="Wrap" Text="{TemplateBinding Text}" />
+                    </DockPanel>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsWarning" Value="True">
+                            <Setter TargetName="Icon" Property="Text" Value="&#xE7BA;" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+        <Style.Triggers>
+            <!-- A warning (doesn't block saving): caution color instead of the critical red -->
+            <Trigger Property="IsWarning" Value="True">
+                <Setter Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+            </Trigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- WinUI-style InfoBar: severity icon (glyph on a filled circle), title, message, action, extra content -->
+    <Style TargetType="controls:InfoBar">
+        <Setter Property="Background" Value="{DynamicResource SystemFillColorAttentionBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppCardStrokeBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="16,8" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:InfoBar">
+                    <Border MinHeight="48"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="4"
+                            Padding="{TemplateBinding Padding}">
+                        <!-- Centered as a block: a compact one-line bar (less padding, e.g. "Restart required")
+                             is shorter than MinHeight and would otherwise sit at the top. Taller bars fill the height,
+                             so this changes nothing for them. -->
+                        <Grid VerticalAlignment="Center">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <!-- Inside the block, icon and text are aligned to the top with the same 6 px offset: icon, first text line and
+                                 a 32 px action button share one center line on a one-line bar (the button is centered, see below).
+                                 (Centering the text but not the icon put the icon too high next to a button.)
+                                 Same glyphs as the WinUI InfoBar; the shape differs per severity,
+                                 so the meaning doesn't depend on the color alone.
+                                 The icon sits 1 px higher (5 instead of 6): the icon font draws its glyphs a little low
+                                 in their box. Measured again on 2026-11-24 at 100 % scaling: with 6 it was a bit low,
+                                 with 4 (the earlier value) 1.5 px above the middle of the text.
+                                 Informational: neutral gray, not the accent color like WinUI. The accent can be red,
+                                 orange or green, and the icon would then look like an error, warning or success. -->
+                            <Grid Width="20" Height="20" Margin="0,5,12,7" VerticalAlignment="Top">
+                                <controls:FontIcon x:Name="IconBackground" Style="{StaticResource IconTextStyle}"
+                                           HorizontalAlignment="Center" Text="&#xF136;"
+                                           Foreground="{DynamicResource SystemFillColorNeutralBrush}" />
+                                <controls:FontIcon x:Name="IconGlyph" Style="{StaticResource IconTextStyle}"
+                                           HorizontalAlignment="Center" Text="&#xF13F;"
+                                           Foreground="{DynamicResource TextFillColorInverseBrush}" />
+                            </Grid>
+
+                            <StackPanel Grid.Column="1" Margin="0,6" VerticalAlignment="Top">
+                                <TextBlock x:Name="TitleText" FontWeight="SemiBold" TextWrapping="Wrap"
+                                           Text="{TemplateBinding Title}" />
+                                <TextBlock x:Name="MessageText" TextWrapping="Wrap"
+                                           Text="{TemplateBinding Message}" />
+                                <!-- No margin here: the content brings its own, so a collapsed one leaves no gap -->
+                                <ContentPresenter x:Name="ExtraContent" />
+                            </StackPanel>
+
+                            <!-- Centered, unlike the icon: on one line the 32 px button lines up with the text anyway;
+                                 when the message wraps (narrow window), it sits in the middle of the text block
+                                 instead of hanging next to the first line -->
+                            <ContentPresenter Grid.Column="2" Margin="12,0,0,0" VerticalAlignment="Center"
+                                              Content="{TemplateBinding ActionContent}" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Severity" Value="Success">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorSuccessBackgroundBrush}" />
+                            <Setter TargetName="IconBackground" Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                            <Setter TargetName="IconGlyph" Property="Text" Value="&#xF13E;" />
+                        </Trigger>
+                        <Trigger Property="Severity" Value="Warning">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCautionBackgroundBrush}" />
+                            <Setter TargetName="IconBackground" Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                            <Setter TargetName="IconGlyph" Property="Text" Value="&#xF13C;" />
+                        </Trigger>
+                        <Trigger Property="Severity" Value="Error">
+                            <Setter Property="Background" Value="{DynamicResource SystemFillColorCriticalBackgroundBrush}" />
+                            <Setter TargetName="IconBackground" Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                            <Setter TargetName="IconGlyph" Property="Text" Value="&#xF13D;" />
+                        </Trigger>
+                        <Trigger Property="Title" Value="{x:Null}">
+                            <Setter TargetName="TitleText" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Message" Value="{x:Null}">
+                            <Setter TargetName="MessageText" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Content" Value="{x:Null}">
+                            <Setter TargetName="ExtraContent" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- One setting as a row, like the Windows 11 Settings app (WinUI Community Toolkit "SettingsCard") -->
+    <Style TargetType="controls:SettingsCard">
+        <Setter Property="Background" Value="{DynamicResource AppCardBackgroundBrush}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource AppCardStrokeBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Padding" Value="16,12" />
+        <Setter Property="Margin" Value="0,0,0,4" />
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="controls:SettingsCard">
+                    <Border x:Name="Root" MinHeight="68"
+                            Background="{TemplateBinding Background}"
+                            BorderBrush="{TemplateBinding BorderBrush}"
+                            BorderThickness="{TemplateBinding BorderThickness}"
+                            CornerRadius="{TemplateBinding CornerRadius}"
+                            Padding="{TemplateBinding Padding}">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+
+                            <controls:FontIcon x:Name="Icon" Margin="2,0,20,0" FontSize="20"
+                                       Style="{StaticResource IconTextStyle}"
+                                       Text="{TemplateBinding Glyph}" />
+
+                            <StackPanel Grid.Column="1" Margin="0,0,16,0" VerticalAlignment="Center">
+                                <controls:FieldLabel x:Name="HeaderLabel"
+                                                     Content="{TemplateBinding Header}"
+                                                     Target="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" />
+                                <!-- Description and its alternate in one cell: the hidden one still takes its room -->
+                                <Grid>
+                                    <TextBlock x:Name="DescriptionText" FontSize="12" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{TemplateBinding Description}" />
+                                    <TextBlock x:Name="AlternateDescriptionText" FontSize="12" TextWrapping="Wrap"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{TemplateBinding AlternateDescription}" Visibility="Hidden" />
+                                </Grid>
+                            </StackPanel>
+
+                            <ContentPresenter Grid.Column="2" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Glyph" Value="{x:Null}">
+                            <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Description" Value="{x:Null}">
+                            <Setter TargetName="DescriptionText" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="AlternateDescription" Value="{x:Null}">
+                            <Setter TargetName="AlternateDescriptionText" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsAlternateDescriptionShown" Value="True">
+                            <Setter TargetName="DescriptionText" Property="Visibility" Value="Hidden" />
+                            <Setter TargetName="AlternateDescriptionText" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsClickable" Value="True" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                                <Condition Property="IsEnabled" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Root" Property="Background" Value="{DynamicResource AppCardBackgroundPointerOverBrush}" />
+                        </MultiTrigger>
+                        <!-- The description keeps its color: on a disabled row it often says why the row is disabled
+                             or what the option does, and in the disabled color it was hard to read (1.7:1 in light mode).
+                             Icon, header and control still show that the row is disabled. -->
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter TargetName="Icon" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <!-- Two cards that belong together (setting + its sub-setting): joined edges, sub-setting indented -->
+    <Style x:Key="SettingsCardGroupTopStyle" TargetType="controls:SettingsCard"
+           BasedOn="{StaticResource {x:Type controls:SettingsCard}}">
+        <Setter Property="CornerRadius" Value="4,4,0,0" />
+        <Setter Property="Margin" Value="0" />
+    </Style>
+    <Style x:Key="SettingsCardGroupBottomStyle" TargetType="controls:SettingsCard"
+           BasedOn="{StaticResource {x:Type controls:SettingsCard}}">
+        <Setter Property="CornerRadius" Value="0,0,4,4" />
+        <Setter Property="BorderThickness" Value="1,0,1,1" />
+        <Setter Property="Padding" Value="58,12,16,12" />
+    </Style>
+
+    <!--
+        Menu item with ONE icon column, like Windows 11's own context menus: it holds the icon, or the checkmark
+        for checked items. Fluent's WPF templates use two shared columns (checkbox + icon) for normal items but
+        only one for submenu headers, so icons, checkmark and texts ended up at three different positions.
+        Used for every item of the tray menu and the "Add" menu, including the submenu's own items.
+    -->
+    <Style x:Key="AlignedMenuItemStyle" TargetType="MenuItem">
+        <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+        <Setter Property="FontSize" Value="14" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="MenuItem">
+                    <Grid SnapsToDevicePixels="True">
+                        <Border x:Name="Highlight" Margin="4,1" MinHeight="32" Padding="12,0" CornerRadius="4"
+                                Background="Transparent">
+                            <Grid>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="16" />                <!-- icon or checkmark -->
+                                    <ColumnDefinition Width="12" />
+                                    <ColumnDefinition Width="*" />                 <!-- text -->
+                                    <ColumnDefinition Width="Auto" />              <!-- e.g. exe name in the Add menu -->
+                                    <ColumnDefinition Width="Auto" />              <!-- submenu chevron -->
+                                </Grid.ColumnDefinitions>
+
+                                <ContentPresenter x:Name="Icon" ContentSource="Icon"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                <controls:FontIcon x:Name="Check" Style="{StaticResource IconTextStyle}"
+                                                   HorizontalAlignment="Center" FontSize="14"
+                                                   Text="&#xE73E;" Visibility="Collapsed" />
+
+                                <!-- Room on the right, so the text never runs into the menu edge or the gesture text -->
+                                <ContentPresenter Grid.Column="2" Margin="0,6,24,6" VerticalAlignment="Center"
+                                                  ContentSource="Header" RecognizesAccessKey="True" />
+
+                                <TextBlock x:Name="Gesture" Grid.Column="3" VerticalAlignment="Center" FontSize="12"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Text="{TemplateBinding InputGestureText}" />
+
+                                <controls:FontIcon x:Name="Chevron" Grid.Column="4" Style="{StaticResource IconTextStyle}"
+                                                   FontSize="12" Text="&#xE76C;" Visibility="Collapsed" />
+                            </Grid>
+                        </Border>
+
+                        <!-- Submenu: same flyout look as Fluent's, lined up with the header row -->
+                        <Popup x:Name="PART_Popup" Placement="Right" HorizontalOffset="-8" VerticalOffset="-4"
+                               AllowsTransparency="True" Focusable="False" PopupAnimation="Fade"
+                               IsOpen="{Binding IsSubmenuOpen, RelativeSource={RelativeSource TemplatedParent}}">
+                            <Border Margin="12,10,12,18" Padding="0,4" CornerRadius="8" BorderThickness="1"
+                                    BorderBrush="{DynamicResource FlyoutBorderBrush}"
+                                    Background="{DynamicResource FlyoutBackground}">
+                                <Border.Effect>
+                                    <DropShadowEffect ShadowDepth="6" Direction="270" Opacity="0.3" BlurRadius="20" />
+                                </Border.Effect>
+                                <ItemsPresenter KeyboardNavigation.TabNavigation="Cycle"
+                                                KeyboardNavigation.DirectionalNavigation="Cycle" />
+                            </Border>
+                        </Popup>
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="Icon" Value="{x:Null}">
+                            <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="IsChecked" Value="True">
+                            <Setter TargetName="Check" Property="Visibility" Value="Visible" />
+                            <Setter TargetName="Icon" Property="Visibility" Value="Collapsed" />
+                        </Trigger>
+                        <Trigger Property="Role" Value="SubmenuHeader">
+                            <Setter TargetName="Chevron" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <Trigger Property="IsHighlighted" Value="True">
+                            <Setter TargetName="Highlight" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsEnabled" Value="False">
+                            <Setter Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                            <Setter TargetName="Gesture" Property="Foreground" Value="{DynamicResource TextFillColorDisabledBrush}" />
+                        </Trigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
+    </Style>
+
+    <Style TargetType="controls:PlacementPreview">
+        <Setter Property="BezelBrush" Value="{DynamicResource ControlStrongFillColorDefaultBrush}" />
+        <Setter Property="ScreenBrush" Value="{DynamicResource SolidBackgroundFillColorBaseBrush}" />
+        <Setter Property="TaskbarBrush" Value="{DynamicResource ControlStrongFillColorDisabledBrush}" />
+        <Setter Property="WindowBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
+        <Setter Property="OverflowBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
+        <Setter Property="TextBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+</ResourceDictionary>

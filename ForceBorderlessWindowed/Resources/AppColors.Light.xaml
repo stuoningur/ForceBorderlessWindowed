@@ -1,0 +1,19 @@
+<!--
+    App colors for the light theme. Fluent's own card border (CardStrokeColorDefault, 6 % black) almost
+    disappears on the light Mica background, so cards, the game list and info bars blur into the window.
+    These are a bit stronger. App.ApplyAppColors swaps this file with the dark / high contrast one.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!-- 12 % black instead of 6 % -->
+    <SolidColorBrush x:Key="AppCardStrokeBrush" Color="#1F000000" />
+    <!-- Opaque white instead of 70 % white: a clearer step from the gray window background -->
+    <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="#FFFFFFFF" />
+    <SolidColorBrush x:Key="AppCardBackgroundPointerOverBrush" Color="#FFF9F9F9" />
+
+    <!-- Replaces Fluent's secondary text color (62 % black) in light mode: WPF draws the 12 px descriptions,
+         hints and inactive tab names so thinly that they measured only about 3.2:1 on screen (2026-11-24).
+         Loaded after the Fluent theme, so this one wins, also inside Fluent's own controls.
+         Still clearly lighter than the primary text (89 % black). -->
+    <SolidColorBrush x:Key="TextFillColorSecondaryBrush" Color="#B8000000" />
+</ResourceDictionary>

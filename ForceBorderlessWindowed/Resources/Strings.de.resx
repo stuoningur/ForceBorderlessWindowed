@@ -1,0 +1,878 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<root>
+  <!-- 
+    Microsoft ResX Schema 
+    
+    Version 2.0
+    
+    The primary goals of this format is to allow a simple XML format 
+    that is mostly human readable. The generation and parsing of the 
+    various data types are done through the TypeConverter classes 
+    associated with the data types.
+    
+    Example:
+    
+    ... ado.net/XML headers & schema ...
+    <resheader name="resmimetype">text/microsoft-resx</resheader>
+    <resheader name="version">2.0</resheader>
+    <resheader name="reader">System.Resources.ResXResourceReader, System.Windows.Forms, ...</resheader>
+    <resheader name="writer">System.Resources.ResXResourceWriter, System.Windows.Forms, ...</resheader>
+    <data name="Name1"><value>this is my long string</value><comment>this is a comment</comment></data>
+    <data name="Color1" type="System.Drawing.Color, System.Drawing">Blue</data>
+    <data name="Bitmap1" mimetype="application/x-microsoft.net.object.binary.base64">
+        <value>[base64 mime encoded serialized .NET Framework object]</value>
+    </data>
+    <data name="Icon1" type="System.Drawing.Icon, System.Drawing" mimetype="application/x-microsoft.net.object.bytearray.base64">
+        <value>[base64 mime encoded string representing a byte array form of the .NET Framework object]</value>
+        <comment>This is a comment</comment>
+    </data>
+                
+    There are any number of "resheader" rows that contain simple 
+    name/value pairs.
+    
+    Each data row contains a name, and value. The row also contains a 
+    type or mimetype. Type corresponds to a .NET class that support 
+    text/value conversion through the TypeConverter architecture. 
+    Classes that don't support this are serialized and stored with the 
+    mimetype set.
+    
+    The mimetype is used for serialized objects, and tells the 
+    ResXResourceReader how to depersist the object. This is currently not 
+    extensible. For a given mimetype the value must be set accordingly:
+    
+    Note - application/x-microsoft.net.object.binary.base64 is the format 
+    that the ResXResourceWriter will generate, however the reader can 
+    read any of the formats listed below.
+    
+    mimetype: application/x-microsoft.net.object.binary.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Binary.BinaryFormatter
+            : and then encoded with base64 encoding.
+    
+    mimetype: application/x-microsoft.net.object.soap.base64
+    value   : The object must be serialized with 
+            : System.Runtime.Serialization.Formatters.Soap.SoapFormatter
+            : and then encoded with base64 encoding.
+
+    mimetype: application/x-microsoft.net.object.bytearray.base64
+    value   : The object must be serialized into a byte array 
+            : using a System.ComponentModel.TypeConverter
+            : and then encoded with base64 encoding.
+    -->
+  <xsd:schema id="root" xmlns="" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:msdata="urn:schemas-microsoft-com:xml-msdata">
+    <xsd:import namespace="http://www.w3.org/XML/1998/namespace" />
+    <xsd:element name="root" msdata:IsDataSet="true">
+      <xsd:complexType>
+        <xsd:choice maxOccurs="unbounded">
+          <xsd:element name="metadata">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" />
+              </xsd:sequence>
+              <xsd:attribute name="name" use="required" type="xsd:string" />
+              <xsd:attribute name="type" type="xsd:string" />
+              <xsd:attribute name="mimetype" type="xsd:string" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="assembly">
+            <xsd:complexType>
+              <xsd:attribute name="alias" type="xsd:string" />
+              <xsd:attribute name="name" type="xsd:string" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="data">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+                <xsd:element name="comment" type="xsd:string" minOccurs="0" msdata:Ordinal="2" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" msdata:Ordinal="1" />
+              <xsd:attribute name="type" type="xsd:string" msdata:Ordinal="3" />
+              <xsd:attribute name="mimetype" type="xsd:string" msdata:Ordinal="4" />
+              <xsd:attribute ref="xml:space" />
+            </xsd:complexType>
+          </xsd:element>
+          <xsd:element name="resheader">
+            <xsd:complexType>
+              <xsd:sequence>
+                <xsd:element name="value" type="xsd:string" minOccurs="0" msdata:Ordinal="1" />
+              </xsd:sequence>
+              <xsd:attribute name="name" type="xsd:string" use="required" />
+            </xsd:complexType>
+          </xsd:element>
+        </xsd:choice>
+      </xsd:complexType>
+    </xsd:element>
+  </xsd:schema>
+  <resheader name="resmimetype">
+    <value>text/microsoft-resx</value>
+  </resheader>
+  <resheader name="version">
+    <value>2.0</value>
+  </resheader>
+  <resheader name="reader">
+    <value>System.Resources.ResXResourceReader, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <resheader name="writer">
+    <value>System.Resources.ResXResourceWriter, System.Windows.Forms, Version=4.0.0.0, Culture=neutral, PublicKeyToken=b77a5c561934e089</value>
+  </resheader>
+  <data name="AppName" xml:space="preserve">
+    <value>Force Borderless Windowed</value>
+  </data>
+  <data name="AppName_Elevated" xml:space="preserve">
+    <value>Force Borderless Windowed (Administrator)</value>
+  </data>
+  <data name="Common_Save" xml:space="preserve">
+    <value>_Speichern</value>
+  </data>
+  <data name="Settings_Tab_Hotkeys" xml:space="preserve">
+    <value>Tastenkürzel</value>
+  </data>
+  <data name="Key_Ctrl" xml:space="preserve">
+    <value>Strg</value>
+    <comment>Modifier key names in shortcuts such as "Ctrl + S": as printed on keyboards in that language</comment>
+  </data>
+  <data name="Key_Alt" xml:space="preserve">
+    <value>Alt</value>
+  </data>
+  <data name="Key_Shift" xml:space="preserve">
+    <value>Umschalt</value>
+  </data>
+  <data name="Key_Win" xml:space="preserve">
+    <value>Win</value>
+  </data>
+  <data name="Key_Delete" xml:space="preserve">
+    <value>Entf</value>
+    <comment>Names of special keys in shortcuts such as "Ctrl + Del": as printed on keyboards in that language. Letters and symbols come from the keyboard layout instead.</comment>
+  </data>
+  <data name="Key_Insert" xml:space="preserve">
+    <value>Einfg</value>
+  </data>
+  <data name="Key_Home" xml:space="preserve">
+    <value>Pos1</value>
+  </data>
+  <data name="Key_End" xml:space="preserve">
+    <value>Ende</value>
+  </data>
+  <data name="Key_PageUp" xml:space="preserve">
+    <value>Bild auf</value>
+  </data>
+  <data name="Key_PageDown" xml:space="preserve">
+    <value>Bild ab</value>
+  </data>
+  <data name="Key_Up" xml:space="preserve">
+    <value>Nach oben</value>
+  </data>
+  <data name="Key_Down" xml:space="preserve">
+    <value>Nach unten</value>
+  </data>
+  <data name="Key_Left" xml:space="preserve">
+    <value>Nach links</value>
+  </data>
+  <data name="Key_Right" xml:space="preserve">
+    <value>Nach rechts</value>
+  </data>
+  <data name="Key_Backspace" xml:space="preserve">
+    <value>Rücktaste</value>
+  </data>
+  <data name="Key_Enter" xml:space="preserve">
+    <value>Eingabe</value>
+  </data>
+  <data name="Key_Escape" xml:space="preserve">
+    <value>Esc</value>
+  </data>
+  <data name="Key_Space" xml:space="preserve">
+    <value>Leertaste</value>
+  </data>
+  <data name="Key_Tab" xml:space="preserve">
+    <value>Tab</value>
+  </data>
+  <data name="Key_Pause" xml:space="preserve">
+    <value>Pause</value>
+  </data>
+  <data name="Key_PrintScreen" xml:space="preserve">
+    <value>Druck</value>
+  </data>
+  <data name="Key_ScrollLock" xml:space="preserve">
+    <value>Rollen</value>
+  </data>
+  <data name="Hotkeys_Section_Global" xml:space="preserve">
+    <value>Globale Tastenkürzel</value>
+  </data>
+  <data name="Hotkeys_Section_Global_Description" xml:space="preserve">
+    <value>Funktionieren in jedem Programm, auch während du spielst. Aus, bis du eines festlegst.</value>
+  </data>
+  <data name="Hotkeys_Section_Window" xml:space="preserve">
+    <value>Einstellungsfenster</value>
+  </data>
+  <data name="Hotkeys_TogglePause" xml:space="preserve">
+    <value>Pausieren oder fortsetzen</value>
+  </data>
+  <data name="Hotkeys_TogglePause_Description" xml:space="preserve">
+    <value>Schaltet die Erkennung aus oder ein, wie im Menü im Infobereich.</value>
+  </data>
+  <data name="Hotkeys_AddForegroundGame" xml:space="preserve">
+    <value>Spiel im Vordergrund hinzufügen</value>
+  </data>
+  <data name="Hotkeys_AddForegroundGame_Description" xml:space="preserve">
+    <value>Fügt das Programm, das du gerade verwendest, zu den Spielen hinzu und macht es sofort randlos, außer die Erkennung ist pausiert. Ein Ton sagt dir, ob es hinzugefügt wurde.</value>
+  </data>
+  <data name="Hotkeys_Save" xml:space="preserve">
+    <value>Einstellungen speichern</value>
+  </data>
+  <data name="Hotkeys_Save_Description" xml:space="preserve">
+    <value>Speichert die Änderungen in diesem Fenster.</value>
+  </data>
+  <data name="Hotkeys_RemoveGame" xml:space="preserve">
+    <value>Ausgewähltes Spiel entfernen</value>
+  </data>
+  <data name="Hotkeys_RemoveGame_Description" xml:space="preserve">
+    <value>Funktioniert, während die Spieleliste den Fokus hat.</value>
+  </data>
+  <data name="Hotkeys_NotSet" xml:space="preserve">
+    <value>Nicht festgelegt</value>
+  </data>
+  <data name="Hotkeys_Box_Hint" xml:space="preserve">
+    <value>Hier klicken und eine Tastenkombination drücken</value>
+  </data>
+  <data name="Hotkeys_Clear" xml:space="preserve">
+    <value>Ausschalten</value>
+  </data>
+  <data name="Hotkeys_Reset" xml:space="preserve">
+    <value>Auf Standard zurücksetzen</value>
+  </data>
+  <data name="Hotkeys_Error_NeedsModifier" xml:space="preserve">
+    <value>Mit Strg, Alt oder Win kombinieren oder eine F-Taste verwenden.</value>
+  </data>
+  <data name="Hotkeys_Error_NavigationKey" xml:space="preserve">
+    <value>Die Spieleliste braucht diese Taste zum Navigieren. Bitte eine andere wählen.</value>
+  </data>
+  <data name="Hotkeys_Error_Invalid" xml:space="preserve">
+    <value>Diese Taste kann nicht als Tastenkürzel verwendet werden.</value>
+  </data>
+  <data name="Hotkeys_Error_Duplicate" xml:space="preserve">
+    <value>Wird schon für „{0}“ verwendet.</value>
+    <comment>{0} = the other hotkey's name, e.g. "Save settings"</comment>
+  </data>
+  <data name="Hotkeys_RegistrationFailedOne" xml:space="preserve">
+    <value>{0} funktioniert nicht: Vermutlich verwendet ein anderes Programm diese Kombination schon. Bitte eine andere wählen.</value>
+  </data>
+  <data name="Hotkeys_RegistrationFailedMany" xml:space="preserve">
+    <value>Diese Tastenkürzel funktionieren nicht: {0}. Vermutlich verwenden andere Programme diese Kombinationen schon. Bitte andere wählen.</value>
+  </data>
+  <data name="Hotkeys_Warning_InUse" xml:space="preserve">
+    <value>Ein anderes Programm verwendet diese Kombination gerade, daher würde sie nicht funktionieren. Wähle nach Möglichkeit eine andere.</value>
+  </data>
+  <data name="Hotkeys_Warning_CommonShortcut" xml:space="preserve">
+    <value>Viele Programme verwenden diese Kombination selbst. Als globales Tastenkürzel kommt sie bei keinem davon mehr an.</value>
+  </data>
+  <data name="Hotkeys_Section_Global_Limits" xml:space="preserve">
+    <value>Geprüft werden können nur Tastenkürzel, die andere Programme bei Windows anmelden. Die Tastenbelegung eines Spiels und Tools, die die Tastatur direkt lesen (manche Makro-Tools und Overlays), werden nicht erkannt. Solange hier ein Tastenkürzel festgelegt ist, erhält das Programm im Vordergrund diese Kombination meist nicht mehr.</value>
+  </data>
+  <data name="Error_Unexpected_Message" xml:space="preserve">
+    <value>Ein unerwarteter Fehler ist aufgetreten. Details wurden in die Logdatei geschrieben.</value>
+  </data>
+  <data name="SettingsWindow_Title" xml:space="preserve">
+    <value>Force Borderless Windowed – Einstellungen</value>
+  </data>
+  <data name="SettingsWindow_TitleElevated" xml:space="preserve">
+    <value>Administrator: Force Borderless Windowed – Einstellungen</value>
+  </data>
+  <data name="Settings_Language_Label" xml:space="preserve">
+    <value>S_prache</value>
+  </data>
+  <data name="Settings_Language_System" xml:space="preserve">
+    <value>Windows-Standard</value>
+  </data>
+  <data name="Settings_Theme_Label" xml:space="preserve">
+    <value>_Design</value>
+  </data>
+  <data name="Settings_Theme_System" xml:space="preserve">
+    <value>Windows-Standard</value>
+  </data>
+  <data name="Settings_Theme_Light" xml:space="preserve">
+    <value>Hell</value>
+  </data>
+  <data name="Settings_Theme_Dark" xml:space="preserve">
+    <value>Dunkel</value>
+  </data>
+  <data name="Settings_RestartNow" xml:space="preserve">
+    <value>Jetzt neu starten</value>
+  </data>
+  <data name="Settings_RestartRequired" xml:space="preserve">
+    <value>Starte die App neu, um die Sprachänderung zu übernehmen.</value>
+  </data>
+  <data name="Settings_StartWithWindows" xml:space="preserve">
+    <value>Mit _Windows starten</value>
+  </data>
+  <data name="Tray_Exit" xml:space="preserve">
+    <value>_Beenden</value>
+  </data>
+  <data name="Tray_OpenLogFolder" xml:space="preserve">
+    <value>_Logordner öffnen</value>
+  </data>
+  <data name="Tray_OpenSettingsFolder" xml:space="preserve">
+    <value>Einstellungs_ordner öffnen</value>
+  </data>
+  <data name="Tray_Settings" xml:space="preserve">
+    <value>_Einstellungen…</value>
+  </data>
+  
+  <data name="Settings_Tab_General" xml:space="preserve">
+    <value>Allgemein</value>
+  </data>
+  <data name="Settings_Tab_Games" xml:space="preserve">
+    <value>Spiele</value>
+  </data>
+  <data name="Settings_DefaultPlacement_Header" xml:space="preserve">
+    <value>Standard-Fensterplatzierung</value>
+  </data>
+  <data name="Placement_UseDefault" xml:space="preserve">
+    <value>Standard verwenden</value>
+  </data>
+  <data name="Placement_Automatic" xml:space="preserve">
+    <value>Automatisch: zentriert, volle Höhe</value>
+  </data>
+  <data name="Placement_AutomaticPreview" xml:space="preserve">
+    <value>{0} × {1} bei X {2}, {3}</value>
+  </data>
+  <data name="Placement_Custom" xml:space="preserve">
+    <value>Benutzerdefiniert</value>
+  </data>
+  <data name="Placement_Width" xml:space="preserve">
+    <value>_Breite</value>
+  </data>
+  <data name="Placement_Height" xml:space="preserve">
+    <value>Hö_he</value>
+  </data>
+  <data name="Placement_OffsetX" xml:space="preserve">
+    <value>_Versatz X</value>
+  </data>
+  <data name="Placement_CenterX" xml:space="preserve">
+    <value>Zentrieren</value>
+  </data>
+  <data name="Placement_CenterX_Tooltip" xml:space="preserve">
+    <value>Versatz so setzen, dass das Fenster waagerecht auf dem Bildschirm zentriert ist</value>
+  </data>
+  <data name="Games_AddMenu" xml:space="preserve">
+    <value>Hin_zufügen</value>
+  </data>
+  <data name="Games_AddManually" xml:space="preserve">
+    <value>Manuell eingeben</value>
+  </data>
+  <data name="Games_NoRunningPrograms" xml:space="preserve">
+    <value>Keine laufenden Programme gefunden</value>
+  </data>
+  <data name="Games_Remove" xml:space="preserve">
+    <value>_Entfernen</value>
+  </data>
+  <data name="Games_NewGame" xml:space="preserve">
+    <value>Neues Spiel</value>
+  </data>
+  <data name="Games_DisplayName" xml:space="preserve">
+    <value>_Anzeigename</value>
+  </data>
+  <data name="Games_ExecutableName" xml:space="preserve">
+    <value>_Programmdatei (z. B. game.exe)</value>
+  </data>
+  <data name="Games_Enabled" xml:space="preserve">
+    <value>Auf dieses Spiel anwenden</value>
+  </data>
+  <data name="Games_Placement_Header" xml:space="preserve">
+    <value>Fensterplatzierung</value>
+  </data>
+  <data name="Games_Error_MissingExe" xml:space="preserve">
+    <value>{0}: Gib den Namen der Programmdatei ein.</value>
+  </data>
+  <data name="Games_Error_DuplicateExe" xml:space="preserve">
+    <value>{0} und {1} verwenden dieselbe Programmdatei mit denselben Filtern.</value>
+  </data>
+  <data name="Placement_CurrentDefault" xml:space="preserve">
+    <value>Aktuell: {0}</value>
+  </data>
+  <data name="Games_Section_Game" xml:space="preserve">
+    <value>Spiel</value>
+  </data>
+  <data name="Placement_Summary_Automatic" xml:space="preserve">
+    <value>Automatisch {3} – {0} × {1} bei X {2}</value>
+    <comment>{3} = aspect ratio, e.g. "16:9"</comment>
+  </data>
+  <data name="Placement_AspectRatio_Label" xml:space="preserve">
+    <value>Seitenve_rhältnis</value>
+  </data>
+  <data name="Placement_AspectRatio_16x9" xml:space="preserve">
+    <value>16:9 (Breitbild)</value>
+  </data>
+  <data name="Placement_AspectRatio_21x9" xml:space="preserve">
+    <value>21:9 (Ultrawide)</value>
+  </data>
+  <data name="Settings_UnsavedChanges_Message" xml:space="preserve">
+    <value>Deine Änderungen gehen verloren, wenn du sie nicht speicherst.</value>
+  </data>
+  <data name="Placement_Summary_Custom" xml:space="preserve">
+    <value>Benutzerdefiniert – {0} × {1} bei X {2}</value>
+  </data>
+  <data name="Common_Close" xml:space="preserve">
+    <value>Schließen</value>
+  </data>
+  
+  <data name="Placement_Error_WidthTooLarge" xml:space="preserve">
+    <value>Breiter als der Bildschirm: höchstens {0} px.</value>
+  </data>
+  <data name="Placement_Error_HeightTooLarge" xml:space="preserve">
+    <value>Höher als der Bildschirm: höchstens {0} px.</value>
+  </data>
+  <data name="Placement_Error_OffsetTooLarge" xml:space="preserve">
+    <value>Zu weit rechts für diese Breite: höchstens {0} px.</value>
+  </data>
+  <data name="Games_Status_Paused" xml:space="preserve">
+    <value>Läuft – die Erkennung ist pausiert</value>
+  </data>
+  <data name="Games_Status_RunningOff" xml:space="preserve">
+    <value>Läuft – für dieses Spiel ausgeschaltet</value>
+  </data>
+  <data name="Games_Running" xml:space="preserve">
+    <value>Läuft gerade</value>
+  </data>
+  
+  
+  <data name="Games_Status_Borderless" xml:space="preserve">
+    <value>Läuft – randlos</value>
+  </data>
+  <data name="Games_Status_NoFrame" xml:space="preserve">
+    <value>Läuft – ohne Rahmen, unverändert</value>
+  </data>
+  <data name="Games_Status_FightPaused" xml:space="preserve">
+    <value>Läuft – das Spiel setzt sein Fenster immer wieder zurück</value>
+  </data>
+  <data name="Games_Status_Failed" xml:space="preserve">
+    <value>Läuft – Ändern des Fensters fehlgeschlagen</value>
+  </data>
+  <data name="Games_Status_AccessDenied" xml:space="preserve">
+    <value>Windows verweigert den Zugriff – das Spiel läuft vermutlich als Administrator</value>
+  </data>
+  <data name="Games_Problem_NoFrame" xml:space="preserve">
+    <value>Das Fenster des Spiels hat bereits keinen Rahmen: Es läuft im Vollbild oder im randlosen Modus des Spiels und bleibt deshalb unverändert. Wenn du stattdessen Größe und Position von hier willst, stelle im Spiel den Fenstermodus ein.</value>
+  </data>
+  <data name="Games_Problem_FightPaused" xml:space="preserve">
+    <value>Neuer Versuch in Kürze. Falls das öfter passiert, prüfe die Anzeigeeinstellungen des Spiels.</value>
+  </data>
+  <data name="Games_Problem_Failed" xml:space="preserve">
+    <value>Das Fenster des Spiels konnte nicht geändert werden. Details stehen im Log (Menü im Infobereich → Fehlerbehebung → Logordner öffnen).</value>
+  </data>
+  <data name="Games_Problem_AccessDenied" xml:space="preserve">
+    <value>Windows erlaubt keine Änderungen am Fenster dieses Spiels. Meist heißt das, dass das Spiel als Administrator läuft: Dann erlaubt Windows Änderungen nur, wenn auch Force Borderless Windowed als Administrator läuft. Starte diese App als Administrator oder das Spiel ohne Administratorrechte.</value>
+  </data>
+  <data name="Games_Problem_AccessDeniedElevated" xml:space="preserve">
+    <value>Windows erlaubt keine Änderungen am Fenster dieses Spiels, obwohl Force Borderless Windowed als Administrator läuft. Das Spiel ist vermutlich geschützt, z. B. durch eine Anti-Cheat-Software.</value>
+  </data>
+  <data name="Placement_Display_Label" xml:space="preserve">
+    <value>B_ildschirm</value>
+  </data>
+  <data name="Placement_DisplayFromDefault" xml:space="preserve">
+    <value>Wie beim Standard: {0}</value>
+  </data>
+  <data name="Placement_Display_Generic" xml:space="preserve">
+    <value>Bildschirm {0}</value>
+  </data>
+  <data name="Placement_Display_PrimaryOption" xml:space="preserve">
+    <value>Hauptbildschirm: {0} – {1} × {2}</value>
+  </data>
+  <data name="Placement_Display_Option" xml:space="preserve">
+    <value>{0}: {1} – {2} × {3}</value>
+  </data>
+  <data name="Placement_Display_NotConnected" xml:space="preserve">
+    <value>{0} (nicht verbunden)</value>
+  </data>
+  <data name="Placement_Display_Current" xml:space="preserve">
+    <value>Bildschirm, auf dem das Spiel läuft</value>
+  </data>
+  <data name="Placement_Display_PrimaryShort" xml:space="preserve">
+    <value>Hauptbildschirm</value>
+  </data>
+  <data name="Placement_Display_CurrentShort" xml:space="preserve">
+    <value>Bildschirm des Spiels</value>
+  </data>
+  <data name="Placement_Summary_WithDisplay" xml:space="preserve">
+    <value>{0}, {1}</value>
+  </data>
+  <data name="Games_Section_WhilePlaying" xml:space="preserve">
+    <value>Während des Spielens</value>
+  </data>
+  <data name="Games_LockCursor" xml:space="preserve">
+    <value>Maus im Spielfenster halten</value>
+  </data>
+  <data name="Games_LockCursor_Hint" xml:space="preserve">
+    <value>Nur solange das Spiel im Vordergrund ist. Alt+Tab oder die Windows-Taste geben die Maus frei.</value>
+  </data>
+  <data name="Games_HideTaskbar" xml:space="preserve">
+    <value>Taskleiste ausblenden</value>
+  </data>
+  <data name="Games_HideTaskbar_Hint" xml:space="preserve">
+    <value>Nur solange das Spiel im Vordergrund ist und nur auf dem Bildschirm des Spiels.</value>
+  </data>
+  <data name="Settings_StartAsAdmin" xml:space="preserve">
+    <value>Mit _Administratorrechten</value>
+  </data>
+  <data name="Settings_StartAsAdmin_Hint" xml:space="preserve">
+    <value>Nur für Spiele nötig, die als Administrator laufen. Kopiert die App in den Ordner „Programme“, den nur Administratoren ändern können, und startet diese Kopie bei der Anmeldung ohne UAC-Abfrage. Beim Ein- und Ausschalten fragt Windows einmal nach Administratorrechten.</value>
+  </data>
+  <data name="Settings_StartAsAdmin_NeedsAutostart" xml:space="preserve">
+    <value>Schalte zuerst „Mit Windows starten“ ein.</value>
+  </data>
+  <data name="Settings_StartAsAdmin_NotAdmin" xml:space="preserve">
+    <value>Nicht verfügbar: Dein Windows-Konto ist kein Administrator, die App würde also trotzdem mit normalen Rechten starten.</value>
+  </data>
+  <data name="Settings_Autostart_Loading" xml:space="preserve">
+    <value>Aktuelle Einstellung wird geprüft…</value>
+  </data>
+  <data name="Settings_LoadFailed_Title" xml:space="preserve">
+    <value>Deine Einstellungsdatei konnte nicht gelesen werden</value>
+  </data>
+  <data name="Settings_LoadFailed_BackedUp" xml:space="preserve">
+    <value>Stattdessen werden die Standardeinstellungen angezeigt. Die alte Datei wurde als {0} im Einstellungsordner aufbewahrt, beim Speichern geht also nichts verloren.</value>
+    <comment>{0} = Dateiname, z. B. settings.broken-20261124-084100.json</comment>
+  </data>
+  <data name="Settings_LoadFailed_NotBackedUp" xml:space="preserve">
+    <value>Stattdessen werden die Standardeinstellungen angezeigt, und eine Kopie der alten Datei war nicht möglich. Speichern versucht die Kopie erst erneut und lässt die alte Datei in Ruhe, bis das klappt.</value>
+  </data>
+  <data name="Settings_PausedHint" xml:space="preserve">
+    <value>Die Erkennung ist pausiert: Spielfenster behalten ihren normalen Rahmen.</value>
+  </data>
+  <data name="Settings_Resume" xml:space="preserve">
+    <value>Fortsetzen</value>
+  </data>
+  <data name="Settings_Section_Detection" xml:space="preserve">
+    <value>Erkennung</value>
+  </data>
+  <data name="Settings_PauseDetection" xml:space="preserve">
+    <value>Erkennung pausieren</value>
+  </data>
+  <data name="Settings_PauseDetection_Description" xml:space="preserve">
+    <value>Solange pausiert ist, bekommen Spielfenster ihren Rahmen und ihre Position zurück. Beim Fortsetzen werden sie wieder randlos. Wirkt sofort, wie im Menü im Infobereich.</value>
+  </data>
+  <data name="Settings_Pause" xml:space="preserve">
+    <value>Pausieren</value>
+  </data>
+  <data name="Games_RestartAsAdmin" xml:space="preserve">
+    <value>Als Administrator neu starten</value>
+  </data>
+  <data name="Games_RestartAsAdmin_Tooltip" xml:space="preserve">
+    <value>Startet Force Borderless Windowed mit Administratorrechten neu. Speichere vorher deine Änderungen.</value>
+  </data>  <data name="Common_DontSave" xml:space="preserve">
+    <value>_Nicht speichern</value>
+  </data>
+  <data name="Common_Cancel" xml:space="preserve">
+    <value>Abbrechen</value>
+  </data>
+  <data name="Common_OK" xml:space="preserve">
+    <value>OK</value>
+  </data>
+  <data name="Error_Unexpected_Title" xml:space="preserve">
+    <value>Etwas ist schiefgelaufen</value>
+  </data>
+  <data name="Settings_Language_Description" xml:space="preserve">
+    <value>Wird nach einem Neustart übernommen</value>
+  </data>
+  <data name="Settings_Theme_Description" xml:space="preserve">
+    <value>Hell, dunkel oder wie Windows</value>
+  </data>
+  <data name="Settings_StartWithWindows_Description" xml:space="preserve">
+    <value>Läuft nach der Anmeldung im Infobereich</value>
+  </data>
+  <data name="Settings_Section_Appearance" xml:space="preserve">
+    <value>Darstellung</value>
+  </data>
+  <data name="Settings_Section_Startup" xml:space="preserve">
+    <value>Start</value>
+  </data>
+  <data name="Settings_UnsavedChanges_Title" xml:space="preserve">
+    <value>Änderungen speichern?</value>
+  </data>
+  <data name="Tray_PauseDetection" xml:space="preserve">
+    <value>Erkennung _pausieren</value>
+  </data>
+  <data name="Tray_Troubleshooting" xml:space="preserve">
+    <value>_Fehlerbehebung</value>
+  </data>
+  <data name="Tray_Status_Paused" xml:space="preserve">
+    <value>Pausiert</value>
+  </data>
+  <data name="Tray_Status_Idle" xml:space="preserve">
+    <value>Wartet auf Spiele</value>
+  </data>
+  <data name="Tray_Status_BorderlessOne" xml:space="preserve">
+    <value>1 Spiel randlos</value>
+  </data>
+  <data name="Tray_Status_BorderlessMany" xml:space="preserve">
+    <value>{0} Spiele randlos</value>
+  </data>
+  <data name="Tray_Status_ProblemOne" xml:space="preserve">
+    <value>1 Spiel braucht Aufmerksamkeit</value>
+  </data>
+  <data name="Tray_Status_ProblemMany" xml:space="preserve">
+    <value>{0} Spiele brauchen Aufmerksamkeit</value>
+  </data>
+  <data name="Placement_Preview" xml:space="preserve">
+    <value>Vorschau</value>
+  </data>
+  <data name="Games_AddFromFile" xml:space="preserve">
+    <value>Programmdatei auswählen…</value>
+  </data>
+  <data name="Games_Browse" xml:space="preserve">
+    <value>_Durchsuchen…</value>
+  </data>
+  <data name="Games_Browse_Title" xml:space="preserve">
+    <value>Programmdatei des Spiels auswählen</value>
+  </data>
+  <data name="Games_Browse_Filter" xml:space="preserve">
+    <value>Programme (*.exe)|*.exe</value>
+  </data>
+  <data name="Games_Empty_Title" xml:space="preserve">
+    <value>Noch keine Spiele</value>
+  </data>
+  <data name="Games_Empty_Message" xml:space="preserve">
+    <value>Starte ein Spiel im Fenstermodus, füge es hier hinzu und wähle dann „Speichern &amp; übernehmen“. Ab dann wird es bei jedem Start randlos.</value>
+  </data>
+  <data name="Games_Empty_Add" xml:space="preserve">
+    <value>Spiel hinzufügen</value>
+  </data>
+  <data name="Games_Status_NotRunning" xml:space="preserve">
+    <value>Läuft nicht</value>
+  </data>
+  <data name="Games_Status_Disabled" xml:space="preserve">
+    <value>Aus</value>
+  </data>
+  <data name="Games_Status_NoMatchingTitle" xml:space="preserve">
+    <value>Läuft – kein Fenster mit passendem Titel</value>
+  </data>
+  <data name="Games_ListTitleFilter" xml:space="preserve">
+    <value>„{0}“</value>
+  </data>
+  <data name="Games_Accessible_TitleFilter" xml:space="preserve">
+    <value>Fenstertitel enthält {0}</value>
+  </data>
+  <data name="Games_Error_MissingExe_Field" xml:space="preserve">
+    <value>Gib den Namen der Programmdatei ein, z. B. game.exe.</value>
+  </data>
+  <data name="Games_Error_DuplicateExe_Field" xml:space="preserve">
+    <value>{0} verwendet diese Programmdatei bereits. Um beide zu behalten, setze bei einem „Nur diese Programmdatei“ oder einen Fenstertitel.</value>
+  </data>
+  <data name="Games_Error_ExeNotFileName_Field" xml:space="preserve">
+    <value>Gib nur den Namen der Programmdatei ein, z. B. game.exe, ohne Ordner.</value>
+  </data>
+  <data name="Games_Error_ExeNotFileName" xml:space="preserve">
+    <value>{0}: Gib nur den Namen der Programmdatei ein, keinen Pfad.</value>
+  </data>
+  <data name="Hotkeys_Box_Recording" xml:space="preserve">
+    <value>Drücke jetzt die Tastenkombination. Tab springt weiter, Strg⁠+⁠Tab wechselt den Tab: Diese lassen sich nicht aufnehmen.</value>
+  </data>
+  <data name="Games_Add_RunningHeader" xml:space="preserve">
+    <value>Laufende Programme</value>
+  </data>
+  <data name="Placement_Error_NotANumber" xml:space="preserve">
+    <value>Gib eine ganze Zahl ein.</value>
+  </data>
+  <data name="Placement_Error_Range" xml:space="preserve">
+    <value>Gib einen Wert von {0} bis {1} ein.</value>
+  </data>
+  <data name="Settings_UnsavedChangesHint" xml:space="preserve">
+    <value>Änderungen noch nicht übernommen</value>
+  </data>
+  <data name="Settings_SaveAndApply" xml:space="preserve">
+    <value>_Speichern &amp; übernehmen</value>
+  </data>
+  <data name="Settings_SavedConfirmation" xml:space="preserve">
+    <value>Gespeichert</value>
+  </data>
+  <data name="Settings_AutostartNotChanged" xml:space="preserve">
+    <value>„Mit Windows starten“ wurde nicht geändert: Die Administratorberechtigung wurde abgelehnt, oder die Änderung wurde nicht abgeschlossen.</value>
+  </data>
+  <data name="Settings_AutostartNotChanged_OthersSaved" xml:space="preserve">
+    <value>Deine anderen Einstellungen wurden gespeichert. „Mit Windows starten“ wurde nicht geändert: Die Administratorberechtigung wurde abgelehnt, oder die Änderung wurde nicht abgeschlossen.</value>
+  </data>
+  <data name="Settings_AutostartInUse" xml:space="preserve">
+    <value>„Mit Windows starten“ wurde nicht geändert: Die Kopie der App unter „Programme“ läuft gerade für einen anderen Windows-Benutzer auf diesem PC und kann deshalb nicht ersetzt werden. Versuche es erneut, sobald sie dort beendet wurde.</value>
+  </data>
+  <data name="Settings_AutostartInUse_OthersSaved" xml:space="preserve">
+    <value>Deine anderen Einstellungen wurden gespeichert. „Mit Windows starten“ wurde nicht geändert: Die Kopie der App unter „Programme“ läuft gerade für einen anderen Windows-Benutzer auf diesem PC und kann deshalb nicht ersetzt werden. Versuche es erneut, sobald sie dort beendet wurde.</value>
+  </data>
+  <data name="Settings_Section_About" xml:space="preserve">
+    <value>Info</value>
+  </data>
+  <data name="Settings_About_Version" xml:space="preserve">
+    <value>Version {0}</value>
+  </data>
+  <data name="Settings_About_Licenses" xml:space="preserve">
+    <value>Lizenzen von Drittanbietern</value>
+  </data>
+  <data name="Settings_AdminCopyOutdated" xml:space="preserve">
+    <value>Bei der Anmeldung startet Windows noch eine ältere Version der App mit Administratorrechten. Aktualisiere sie auf diese Version.</value>
+  </data>
+  <data name="Settings_AdminCopyUpdate" xml:space="preserve">
+    <value>Aktualisieren</value>
+  </data>
+  <data name="Settings_AdminCopyNotUpdated" xml:space="preserve">
+    <value>Nicht aktualisiert: Die Administratorberechtigung wurde verweigert, oder die Aktualisierung wurde nicht abgeschlossen.</value>
+  </data>
+  <data name="Settings_AdminCopyInUse" xml:space="preserve">
+    <value>Nicht aktualisiert: Die Kopie der App unter „Programme“ läuft gerade für einen anderen Windows-Benutzer auf diesem PC und kann deshalb nicht ersetzt werden. Versuche es erneut, sobald sie dort beendet wurde.</value>
+  </data>
+  <data name="Games_Status_NotResponding" xml:space="preserve">
+    <value>Läuft – wartet, das Spiel reagiert nicht</value>
+  </data>
+  <data name="Games_Problem_NotResponding" xml:space="preserve">
+    <value>Windows meldet, dass das Spiel nicht reagiert, meist während es lädt. Sein Fenster wird geändert, sobald es wieder reagiert.</value>
+  </data>
+  <data name="Games_MatchExecutablePath" xml:space="preserve">
+    <value>_Nur diese Programmdatei</value>
+  </data>
+  <data name="Games_MatchExecutablePath_NoPath" xml:space="preserve">
+    <value>Wähle die Datei mit „Durchsuchen…“, um das zu nutzen.</value>
+  </data>
+  <data name="Games_WindowTitleContains" xml:space="preserve">
+    <value>_Fenstertitel enthält (optional)</value>
+  </data>
+  <data name="Games_WindowTitleContains_Hint" xml:space="preserve">
+    <value>Leer lassen für jedes Fenster des Programms. Nützlich, wenn sich mehrere Spiele eine Programmdatei teilen, z. B. javaw.exe.</value>
+  </data>
+  <data name="Placement_GameSize" xml:space="preserve">
+    <value>Eigene Größe des Spiels, zentriert</value>
+  </data>
+  <data name="Placement_GameSize_Hint" xml:space="preserve">
+    <value>Entfernt den Rahmen und behält die Größe, die das Spiel einstellt. Folgt einer Auflösung, die du im Spiel änderst.</value>
+  </data>
+  <data name="Placement_GameSize_PreviewLabel" xml:space="preserve">
+    <value>Größe des Spiels</value>
+  </data>
+  <data name="Placement_Summary_GameSize" xml:space="preserve">
+    <value>Eigene Größe des Spiels, zentriert</value>
+  </data>
+  <data name="Hotkeys_ApplyToForeground" xml:space="preserve">
+    <value>Fenster im Vordergrund randlos machen</value>
+  </data>
+  <data name="Hotkeys_ApplyToForeground_Description" xml:space="preserve">
+    <value>Vorübergehend: macht das Fenster, das du gerade benutzt, mit der Standardplatzierung randlos. Nichts wird gespeichert und das Programm wird nicht zu den Spielen hinzugefügt. Das gilt, bis das Fenster geschlossen, die Erkennung pausiert oder die App beendet wird; nochmal drücken stellt das Fenster sofort wieder her. Ein Ton sagt dir, ob es geklappt hat.</value>
+  </data>
+  <data name="Games_BlackBackground" xml:space="preserve">
+    <value>Schwarzer Hintergrund</value>
+  </data>
+  <data name="Games_BlackBackground_Hint" xml:space="preserve">
+    <value>Deckt den Rest des Bildschirms des Spiels schwarz ab, solange das Spiel im Vordergrund ist. Die Taskleiste bleibt darüber: Schalte auch „Taskleiste ausblenden“ ein für einen komplett schwarzen Bildschirm.</value>
+  </data>
+  <data name="Placement_ShowOnDisplay" xml:space="preserve">
+    <value>Auf dem Bildschirm zeigen</value>
+  </data>
+  <data name="Placement_ShowOnDisplay_Tooltip" xml:space="preserve">
+    <value>Zeigt für ein paar Sekunden direkt auf dem Bildschirm, wo das Spielfenster sein wird.</value>
+  </data>
+  <data name="Placement_ShowOnDisplay_NeedsGame" xml:space="preserve">
+    <value>Starte das Spiel, um seine eigene Größe zu zeigen.</value>
+  </data>
+  <data name="Tray_Games" xml:space="preserve">
+    <value>_Spiele</value>
+  </data>
+  <data name="Tray_Games_None" xml:space="preserve">
+    <value>Noch keine Spiele</value>
+  </data>
+  <data name="Tray_GameStatus_Borderless" xml:space="preserve">
+    <value>Randlos</value>
+  </data>
+  <data name="Tray_GameStatus_NoFrame" xml:space="preserve">
+    <value>Ohne Rahmen</value>
+  </data>
+  <data name="Tray_GameStatus_NotResponding" xml:space="preserve">
+    <value>Wartet</value>
+  </data>
+  <data name="Tray_GameStatus_FightPaused" xml:space="preserve">
+    <value>Setzt sich zurück</value>
+  </data>
+  <data name="Tray_GameStatus_Failed" xml:space="preserve">
+    <value>Fehlgeschlagen</value>
+  </data>
+  <data name="Tray_GameStatus_AccessDenied" xml:space="preserve">
+    <value>Zugriff verweigert</value>
+  </data>
+  <data name="Games_UseCurrentTitle" xml:space="preserve">
+    <value>Aktuellen _Titel übernehmen</value>
+  </data>
+  <data name="Tray_GameStatus_Off" xml:space="preserve">
+    <value>Aus</value>
+  </data>
+  <data name="Tray_GameStatus_Paused" xml:space="preserve">
+    <value>Pausiert</value>
+  </data>
+  <data name="Tray_GameStatus_Running" xml:space="preserve">
+    <value>Läuft</value>
+  </data>
+  <data name="Overlay_Added" xml:space="preserve">
+    <value>{0} zu den Spielen hinzugefügt</value>
+  </data>
+  <data name="Overlay_AddedPaused" xml:space="preserve">
+    <value>{0} zu den Spielen hinzugefügt – die Erkennung ist pausiert</value>
+  </data>
+  <data name="Overlay_AlreadyAdded" xml:space="preserve">
+    <value>{0} ist bereits bei den Spielen</value>
+  </data>
+  <data name="Overlay_NoProgram" xml:space="preserve">
+    <value>Dieses Fenster geht nicht (Desktop oder ein Windows-Programm)</value>
+  </data>
+  <data name="Overlay_OneOffAdded" xml:space="preserve">
+    <value>{0}: randlos, bis es geschlossen wird</value>
+  </data>
+  <data name="Overlay_OneOffRestored" xml:space="preserve">
+    <value>{0}: Fenster wiederhergestellt</value>
+  </data>
+  <data name="Overlay_OneOffNoFrame" xml:space="preserve">
+    <value>{0} hat keinen Rahmen (Vollbild?), bleibt unverändert</value>
+  </data>
+  <data name="Overlay_OneOffAccessDenied" xml:space="preserve">
+    <value>Windows verweigert den Zugriff – {0} läuft vermutlich als Administrator</value>
+  </data>
+  <data name="Overlay_OneOffFailed" xml:space="preserve">
+    <value>{0}: Das Fenster konnte nicht geändert werden (Details im Log)</value>
+  </data>
+  <data name="Overlay_OneOffPaused" xml:space="preserve">
+    <value>Die Erkennung ist pausiert: {0} bleibt unverändert</value>
+  </data>
+  <data name="Overlay_Paused" xml:space="preserve">
+    <value>Erkennung pausiert – Spielfenster wiederhergestellt</value>
+  </data>
+  <data name="Overlay_Resumed" xml:space="preserve">
+    <value>Erkennung fortgesetzt</value>
+  </data>
+  <data name="Hotkeys_ShowMessages" xml:space="preserve">
+    <value>Meldung über dem Spiel anzeigen</value>
+  </data>
+  <data name="Hotkeys_ShowMessages_Description" xml:space="preserve">
+    <value>Wenn ein globaler Hotkey gedrückt wird: ein kurzer Hinweis über dem Spiel. Nicht über Spielen im exklusiven Vollbild.</value>
+  </data>
+  <data name="Tray_Status_NoFrameOne" xml:space="preserve">
+    <value>1 Spiel bereits ohne Rahmen</value>
+  </data>
+  <data name="Tray_Status_NoFrameMany" xml:space="preserve">
+    <value>{0} Spiele bereits ohne Rahmen</value>
+  </data>
+  <data name="Tray_Status_WaitingOne" xml:space="preserve">
+    <value>1 Spiel reagiert noch nicht</value>
+  </data>
+  <data name="Tray_Status_WaitingMany" xml:space="preserve">
+    <value>{0} Spiele reagieren noch nicht</value>
+  </data>
+  <data name="Tray_ShowDetails" xml:space="preserve">
+    <value>_Details anzeigen…</value>
+  </data>
+  <data name="Placement_KeepAspectRatio" xml:space="preserve">
+    <value>Form auf schmaleren Bildschirmen beibehalten (Balken oben und unten)</value>
+  </data>
+  <data name="Placement_Warning_DoesNotFit" xml:space="preserve">
+    <value>Größer als dieser Bildschirm ({0} × {1}): Das Spielfenster wird passend verkleinert.</value>
+  </data>
+  <data name="Hotkeys_PlaySounds" xml:space="preserve">
+    <value>Ton abspielen</value>
+  </data>
+  <data name="Hotkeys_PlaySounds_Description" xml:space="preserve">
+    <value>Wenn ein globaler Hotkey gedrückt wird: der Windows-Benachrichtigungston, wenn es geklappt hat, der Fehlerton, wenn es nicht ging. Verwendet deine Windows-Soundeinstellungen.</value>
+  </data>
+</root>

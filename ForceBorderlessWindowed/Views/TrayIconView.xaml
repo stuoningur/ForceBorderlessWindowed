@@ -1,0 +1,184 @@
+﻿<tb:TaskbarIcon x:Class="ForceBorderlessWindowed.Views.TrayIconView"
+                xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+                xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+                xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                xmlns:tb="clr-namespace:H.NotifyIcon;assembly=H.NotifyIcon.Wpf"
+                xmlns:vm="clr-namespace:ForceBorderlessWindowed.ViewModels"
+                xmlns:res="clr-namespace:ForceBorderlessWindowed.Resources"
+                xmlns:controls="clr-namespace:ForceBorderlessWindowed.Controls"
+                mc:Ignorable="d"
+                d:DataContext="{d:DesignInstance Type=vm:TrayIconViewModel}"
+                ToolTipText="{Binding ToolTipText}"
+                NoLeftClickDelay="True"
+                LeftClickCommand="{Binding ShowSettingsCommand}">
+    <!-- Order as in the Windows guidelines for notification area menus:
+         default command (bold) | on/off toggle | rarely used items | Exit -->
+    <!-- The menu is created in code from this resource, a new one after every theme switch (see RefreshMenuTheme):
+         it isn't part of a window, so a theme change never reaches it, and Fluent's menu templates keep the colors
+         they were built with. x:Shared="False": each lookup returns a new menu. -->
+    <tb:TaskbarIcon.Resources>
+        <ContextMenu x:Key="TrayMenu" x:Shared="False" MinWidth="220">
+            <ContextMenu.Resources>
+                <!-- One icon column for icons and the checkmark, also in the submenu (see Styles.xaml).
+                     The header's ContentPresenter turns "_Settings" into an access key. -->
+                <Style TargetType="MenuItem" BasedOn="{StaticResource AlignedMenuItemStyle}" />
+            </ContextMenu.Resources>
+
+            <!-- Default command: SemiBold (Fluent avoids Bold), same action as a left click -->
+            <MenuItem Header="{x:Static res:Strings.Tray_Settings}"
+                      Command="{Binding ShowSettingsCommand}"
+                      FontWeight="SemiBold">
+                <MenuItem.Icon>
+                    <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center" Text="&#xE713;" />   <!-- Settings (gear) -->
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <!-- Checkable: the checkmark takes the icon column, like in Windows' own menus -->
+            <MenuItem Header="{x:Static res:Strings.Tray_PauseDetection}"
+                      IsCheckable="True"
+                      IsChecked="{Binding IsPaused}" />
+            <!-- Each game on/off, saved right away like Pause; A–Z like the Games tab, running ones with their status at the right -->
+            <MenuItem Header="{x:Static res:Strings.Tray_Games}" ItemsSource="{Binding Games}">
+                <MenuItem.Icon>
+                    <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center" Text="&#xE7FC;" />   <!-- Game -->
+                </MenuItem.Icon>
+                <MenuItem.ItemContainerStyle>
+                    <Style TargetType="MenuItem" BasedOn="{StaticResource AlignedMenuItemStyle}">
+                        <Setter Property="IsCheckable" Value="True" />
+                        <Setter Property="IsChecked" Value="{Binding Enabled}" />
+                        <Setter Property="InputGestureText" Value="{Binding StatusText}" />
+                        <!-- Otherwise a screen reader reads the ViewModel's class name -->
+                        <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}" />
+                        <!-- Icon with status badge, then the name. The checkmark keeps the menu's own icon column.
+                             A TextBlock, not the plain string: a "_" in a game's name must not become an access key. -->
+                        <Setter Property="HeaderTemplate">
+                            <Setter.Value>
+                                <DataTemplate>
+                                    <StackPanel Orientation="Horizontal">
+                                        <Grid x:Name="IconArea" Width="20" Height="20" Margin="0,0,10,0" VerticalAlignment="Center">
+                                            <controls:FontIcon x:Name="GenericIcon" Style="{StaticResource IconTextStyle}"
+                                                               HorizontalAlignment="Center" Visibility="Collapsed"
+                                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                               Text="&#xE7FC;" />
+                                            <controls:DecorativeImage Source="{Binding Icon}" Width="20" Height="20"
+                                                                      RenderOptions.BitmapScalingMode="HighQuality" />
+
+                                            <!-- Same badge as in the Games list, smaller; a ring in the menu color around it. The neutral ones (paused,
+                                                 running) are in the text color with bars in the menu color: the list's neutral fill and the
+                                                 inverse text color are partly transparent and wash out at this size. -->
+                                            <Grid x:Name="Badge" Width="14" Height="14" Margin="0,0,-5,-5"
+                                                  HorizontalAlignment="Right" VerticalAlignment="Bottom" Visibility="Collapsed">
+                                                <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center"
+                                                                   FontSize="15" Text="&#xF136;"
+                                                                   Foreground="{DynamicResource FlyoutBackground}" />
+                                                <controls:FontIcon x:Name="BadgeBackground" Style="{StaticResource IconTextStyle}"
+                                                                   HorizontalAlignment="Center" FontSize="12" Text="&#xF136;"
+                                                                   Foreground="{DynamicResource TextFillColorPrimaryBrush}" />
+                                                <controls:FontIcon x:Name="BadgeGlyph" Style="{StaticResource IconTextStyle}"
+                                                                   HorizontalAlignment="Center" FontSize="12" Text=""
+                                                                   Foreground="{DynamicResource TextFillColorInverseBrush}" />
+                                                <!-- Solid bars like the paused tray icon's badge (the Pause glyph is an outline) -->
+                                                <StackPanel x:Name="PauseBars" Orientation="Horizontal" HorizontalAlignment="Center"
+                                                            VerticalAlignment="Center" Visibility="Collapsed"
+                                                            UseLayoutRounding="True" SnapsToDevicePixels="True">
+                                                    <Rectangle Width="2" Height="6" Fill="{DynamicResource SolidBackgroundFillColorBaseBrush}" />
+                                                    <Rectangle Width="2" Height="6" Margin="2,0,0,0" Fill="{DynamicResource SolidBackgroundFillColorBaseBrush}" />
+                                                </StackPanel>
+                                            </Grid>
+                                        </Grid>
+                                        <TextBlock VerticalAlignment="Center" Text="{Binding Title}" />
+                                        <!-- The title filter, which tells games with the same exe and name apart.
+                                             Width-limited like the Add menu: a window title can be long. -->
+                                        <TextBlock x:Name="TitleFilterText" Margin="6,0,0,0" MaxWidth="180"
+                                                   VerticalAlignment="Center" TextTrimming="CharacterEllipsis"
+                                                   Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                   Text="{Binding TitleFilterText}" ToolTip="{Binding TitleFilter}" />
+                                    </StackPanel>
+                                    <DataTemplate.Triggers>
+                                        <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
+                                            <Setter TargetName="GenericIcon" Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding TitleFilter}" Value="{x:Null}">
+                                            <Setter TargetName="TitleFilterText" Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <!-- Off: only the icon fades, like in the Games list (the text says "Off") -->
+                                        <DataTrigger Binding="{Binding IsOn}" Value="False">
+                                            <Setter TargetName="IconArea" Property="Opacity" Value="0.45" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding IsPlaceholder}" Value="True">
+                                            <Setter TargetName="IconArea" Property="Visibility" Value="Collapsed" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Badge}" Value="{x:Static vm:TrayBadge.Neutral}">
+                                            <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Badge}" Value="{x:Static vm:TrayBadge.Paused}">
+                                            <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
+                                            <Setter TargetName="PauseBars" Property="Visibility" Value="Visible" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Badge}" Value="{x:Static vm:TrayBadge.Success}">
+                                            <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
+                                            <Setter TargetName="BadgeBackground" Property="Foreground" Value="{DynamicResource SystemFillColorSuccessBrush}" />
+                                            <Setter TargetName="BadgeGlyph" Property="Text" Value="&#xF13E;" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Badge}" Value="{x:Static vm:TrayBadge.Warning}">
+                                            <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
+                                            <Setter TargetName="BadgeBackground" Property="Foreground" Value="{DynamicResource SystemFillColorCautionBrush}" />
+                                            <Setter TargetName="BadgeGlyph" Property="Text" Value="&#xF13C;" />
+                                        </DataTrigger>
+                                        <DataTrigger Binding="{Binding Badge}" Value="{x:Static vm:TrayBadge.Error}">
+                                            <Setter TargetName="Badge" Property="Visibility" Value="Visible" />
+                                            <Setter TargetName="BadgeBackground" Property="Foreground" Value="{DynamicResource SystemFillColorCriticalBrush}" />
+                                            <Setter TargetName="BadgeGlyph" Property="Text" Value="&#xF13D;" />
+                                        </DataTrigger>
+                                    </DataTemplate.Triggers>
+                                </DataTemplate>
+                            </Setter.Value>
+                        </Setter>
+                        <Style.Triggers>
+                            <DataTrigger Binding="{Binding IsPlaceholder}" Value="True">
+                                <Setter Property="IsCheckable" Value="False" />
+                                <Setter Property="IsEnabled" Value="False" />
+                            </DataTrigger>
+                        </Style.Triggers>
+                    </Style>
+                </MenuItem.ItemContainerStyle>
+            </MenuItem>
+            <!-- Only while a game needs attention: straight to its details -->
+            <MenuItem Header="{x:Static res:Strings.Tray_ShowDetails}"
+                      Command="{Binding ShowProblemDetailsCommand}"
+                      Visibility="{Binding HasProblem, Converter={StaticResource BoolToVisibility}}">
+                <MenuItem.Icon>
+                    <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center"
+                                       Foreground="{DynamicResource SystemFillColorCautionBrush}" Text="&#xE7BA;" />   <!-- Warning -->
+                </MenuItem.Icon>
+            </MenuItem>
+            <Separator />
+            <!-- Rarely needed, so out of the way in a submenu -->
+            <MenuItem Header="{x:Static res:Strings.Tray_Troubleshooting}">
+                <MenuItem.Icon>
+                    <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center" Text="&#xE90F;" />   <!-- Repair (wrench) -->
+                </MenuItem.Icon>
+                <MenuItem Header="{x:Static res:Strings.Tray_OpenLogFolder}"
+                          Command="{Binding OpenLogFolderCommand}">
+                    <MenuItem.Icon>
+                        <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center" Text="&#xE9F9;" />   <!-- Report document -->
+                    </MenuItem.Icon>
+                </MenuItem>
+                <MenuItem Header="{x:Static res:Strings.Tray_OpenSettingsFolder}"
+                          Command="{Binding OpenSettingsFolderCommand}">
+                    <MenuItem.Icon>
+                        <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center" Text="&#xED25;" />   <!-- Open folder -->
+                    </MenuItem.Icon>
+                </MenuItem>
+            </MenuItem>
+            <Separator />
+            <MenuItem Header="{x:Static res:Strings.Tray_Exit}"
+                      Command="{Binding ExitCommand}">
+                <MenuItem.Icon>
+                    <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center" Text="&#xE7E8;" />   <!-- Power -->
+                </MenuItem.Icon>
+            </MenuItem>
+        </ContextMenu>
+    </tb:TaskbarIcon.Resources>
+</tb:TaskbarIcon>

@@ -1,0 +1,10 @@
+<!--
+    App colors for Windows contrast themes: only the user's system colors, never fixed values.
+    Cards get a full-strength border, as the contrast theme guidelines ask for.
+-->
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <SolidColorBrush x:Key="AppCardStrokeBrush" Color="{x:Static SystemColors.WindowTextColor}" />
+    <SolidColorBrush x:Key="AppCardBackgroundBrush" Color="{x:Static SystemColors.WindowColor}" />
+    <SolidColorBrush x:Key="AppCardBackgroundPointerOverBrush" Color="{x:Static SystemColors.WindowColor}" />
+</ResourceDictionary>

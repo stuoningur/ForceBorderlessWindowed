@@ -1,0 +1,199 @@
+<UserControl x:Class="ForceBorderlessWindowed.Views.PlacementEditor"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:vm="clr-namespace:ForceBorderlessWindowed.ViewModels"
+             xmlns:controls="clr-namespace:ForceBorderlessWindowed.Controls"
+             xmlns:res="clr-namespace:ForceBorderlessWindowed.Resources"
+             mc:Ignorable="d"
+             d:DataContext="{d:DesignInstance Type=vm:PlacementEditorViewModel}">
+
+    <StackPanel>
+        <!-- Drawing of the effective placement, like the monitor diagram on top of Windows' display settings.
+             Screen readers get the same information as text (the summary). -->
+        <controls:PlacementPreview Height="132" Margin="0,0,0,8" HorizontalAlignment="Stretch"
+                                   MonitorWidth="{Binding Preview.MonitorWidth, FallbackValue=0}"
+                                   MonitorHeight="{Binding Preview.MonitorHeight, FallbackValue=0}"
+                                   WindowX="{Binding Preview.X, FallbackValue=0}"
+                                   WindowWidth="{Binding Preview.Width, FallbackValue=0}"
+                                   WindowHeight="{Binding Preview.Height, FallbackValue=0}"
+                                   IsOverflow="{Binding Preview.Exceeds, FallbackValue=False}"
+                                   SizeLabel="{Binding Preview.Label, FallbackValue={x:Null}}"
+                                   AutomationProperties.Name="{x:Static res:Strings.Placement_Preview}"
+                                   AutomationProperties.HelpText="{Binding Summary}" />
+
+        <!-- Briefly outlines the placement on the real monitor -->
+        <StackPanel Margin="0,0,0,16" Orientation="Horizontal"
+                    Visibility="{Binding CanShowOnDisplay, Converter={StaticResource BoolToVisibility}}">
+            <Button MinWidth="88" Command="{Binding ShowOnDisplayCommand}"
+                    ToolTip="{x:Static res:Strings.Placement_ShowOnDisplay_Tooltip}"
+                    AutomationProperties.Name="{x:Static res:Strings.Placement_ShowOnDisplay}"
+                    AutomationProperties.HelpText="{x:Static res:Strings.Placement_ShowOnDisplay_Tooltip}">
+                <StackPanel Orientation="Horizontal">
+                    <controls:FontIcon Style="{StaticResource IconTextStyle}" Margin="0,0,8,0" Text="&#xE7B3;" />   <!-- RedEye -->
+                    <TextBlock Text="{x:Static res:Strings.Placement_ShowOnDisplay}" />
+                </StackPanel>
+            </Button>
+            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
+                       Text="{x:Static res:Strings.Placement_ShowOnDisplay_NeedsGame}"
+                       Visibility="{Binding ShowOnDisplayNeedsGame, Converter={StaticResource BoolToVisibility}}" />
+        </StackPanel>
+
+        <!-- Which display: applies to every option, so it sits above them, next to the drawing of it.
+             With "Use default" the default's display applies: then a text says which one, in the same room
+             (Hidden, not Collapsed), so the options below don't move when switching.
+             Fills the available width up to 360, so it isn't cut off in a narrow window. Done with a capped
+             column, not MaxWidth on the ComboBox: a stretched element with MaxWidth gets centered in wider space. -->
+        <StackPanel Margin="0,0,0,16">
+            <controls:FieldLabel Content="{x:Static res:Strings.Placement_Display_Label}"
+                                 Target="{Binding ElementName=DisplayBox}" />
+            <Grid Margin="0,4,0,0">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*" MaxWidth="360" />
+                </Grid.ColumnDefinitions>
+                <ComboBox x:Name="DisplayBox"
+                          ItemsSource="{Binding DisplayOptions}"
+                          DisplayMemberPath="Label"
+                          SelectedItem="{Binding SelectedDisplay}">
+                    <ComboBox.Style>
+                        <Style TargetType="ComboBox" BasedOn="{StaticResource {x:Type ComboBox}}">
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowDisplaySelection}" Value="False">
+                                    <Setter Property="Visibility" Value="Hidden" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </ComboBox.Style>
+                </ComboBox>
+                <TextBlock VerticalAlignment="Center" TextTrimming="CharacterEllipsis" TextWrapping="NoWrap"
+                           Text="{Binding DefaultDisplayText}" ToolTip="{Binding DefaultDisplayText}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding ShowDisplaySelection}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </StackPanel>
+
+        <!-- All RadioButtons are children of this panel: that makes them one group automatically.
+             (A fixed GroupName would instead group them with the other editor in the same window.) -->
+        <StackPanel>
+            <!-- "Use default" only exists for games -->
+            <RadioButton Content="{x:Static res:Strings.Placement_UseDefault}"
+                         IsChecked="{Binding IsUseDefault}"
+                         Visibility="{Binding CanUseDefault, Converter={StaticResource BoolToVisibility}}" />
+            <TextBlock Margin="28,0,0,8" Style="{StaticResource SecondaryTextStyle}"
+                       Text="{Binding DefaultSummary}"
+                       Visibility="{Binding CanUseDefault, Converter={StaticResource BoolToVisibility}}" />
+
+            <RadioButton Content="{x:Static res:Strings.Placement_Automatic}"
+                         IsChecked="{Binding IsAutomatic}" />
+            <!-- Only for "Automatic"; Custom has its own size. Label to the left, like a sub-setting of the option. -->
+            <StackPanel Margin="28,6,0,6" Orientation="Horizontal"
+                        Visibility="{Binding IsAutomatic, Converter={StaticResource BoolToVisibility}}">
+                <controls:FieldLabel VerticalAlignment="Center" Margin="0,0,12,0"
+                                     Content="{x:Static res:Strings.Placement_AspectRatio_Label}"
+                                     Target="{Binding ElementName=AspectRatioBox}" />
+                <ComboBox x:Name="AspectRatioBox" MinWidth="180"
+                          ItemsSource="{Binding AspectRatios}"
+                          DisplayMemberPath="DisplayName"
+                          SelectedItem="{Binding SelectedAspectRatio}" />
+            </StackPanel>
+            <CheckBox Margin="28,0,0,6" IsChecked="{Binding KeepAspectRatio}"
+                      Content="{x:Static res:Strings.Placement_KeepAspectRatio}"
+                      Visibility="{Binding IsAutomatic, Converter={StaticResource BoolToVisibility}}" />
+            <TextBlock Margin="28,0,0,8" Style="{StaticResource SecondaryTextStyle}">
+                <TextBlock.Text>
+                    <MultiBinding StringFormat="{x:Static res:Strings.Placement_AutomaticPreview}">
+                        <Binding Path="AutomaticPlacement.Width" />
+                        <Binding Path="AutomaticPlacement.Height" />
+                        <Binding Path="AutomaticPlacement.OffsetX" />
+                        <!-- Which display, also while "Use default" hides the display choice above -->
+                        <Binding Path="SelectedDisplay.ShortLabel" FallbackValue="" />
+                    </MultiBinding>
+                </TextBlock.Text>
+            </TextBlock>
+
+            <RadioButton Content="{x:Static res:Strings.Placement_GameSize}"
+                         IsChecked="{Binding IsGameSize}" />
+            <TextBlock Margin="28,0,0,8" Style="{StaticResource SecondaryTextStyle}"
+                       Text="{x:Static res:Strings.Placement_GameSize_Hint}" />
+
+            <RadioButton Content="{x:Static res:Strings.Placement_Custom}"
+                         IsChecked="{Binding IsCustom}" />
+        </StackPanel>
+
+        <!-- Only visible for "Custom": disabled fields look almost like enabled ones in the dark theme -->
+        <StackPanel Margin="28,8,0,0"
+                    Visibility="{Binding IsCustom, Converter={StaticResource BoolToVisibility}}">
+            <!-- Label above each field, and the fields wrap: fits a narrow window, also with longer translations.
+                 FieldLabel: access key + the field's name for screen readers.
+                 FieldError: the field's own error below it (red border, read with the field). -->
+            <WrapPanel>
+                <WrapPanel.Resources>
+                    <Style x:Key="NumberFieldStyle" TargetType="StackPanel">
+                        <Setter Property="Width" Value="140" />
+                        <Setter Property="Margin" Value="0,0,16,8" />
+                    </Style>
+                    <Style x:Key="UnitTextStyle" TargetType="TextBlock" BasedOn="{StaticResource SecondaryTextStyle}">
+                        <Setter Property="DockPanel.Dock" Value="Right" />
+                        <Setter Property="Margin" Value="6,0,0,0" />
+                        <Setter Property="VerticalAlignment" Value="Center" />
+                        <Setter Property="Text" Value="px" />
+                    </Style>
+                </WrapPanel.Resources>
+
+                <StackPanel Style="{StaticResource NumberFieldStyle}">
+                    <controls:FieldLabel Content="{x:Static res:Strings.Placement_Width}"
+                                         Target="{Binding ElementName=WidthBox}" />
+                    <DockPanel Margin="0,4,0,0">
+                        <TextBlock Style="{StaticResource UnitTextStyle}" />
+                        <TextBox x:Name="WidthBox" Text="{Binding WidthText, UpdateSourceTrigger=PropertyChanged}" />
+                    </DockPanel>
+                    <controls:FieldError Text="{Binding WidthError}" Target="{Binding ElementName=WidthBox}" />
+                </StackPanel>
+
+                <StackPanel Style="{StaticResource NumberFieldStyle}">
+                    <controls:FieldLabel Content="{x:Static res:Strings.Placement_Height}"
+                                         Target="{Binding ElementName=HeightBox}" />
+                    <DockPanel Margin="0,4,0,0">
+                        <TextBlock Style="{StaticResource UnitTextStyle}" />
+                        <TextBox x:Name="HeightBox" Text="{Binding HeightText, UpdateSourceTrigger=PropertyChanged}" />
+                    </DockPanel>
+                    <controls:FieldError Text="{Binding HeightError}" Target="{Binding ElementName=HeightBox}" />
+                </StackPanel>
+
+                <!-- Wider than the others for the "Center" button: the field itself keeps their width,
+                     and the error below wraps within the row's width instead of widening it -->
+                <StackPanel Style="{StaticResource NumberFieldStyle}" Width="Auto">
+                    <controls:FieldLabel Content="{x:Static res:Strings.Placement_OffsetX}"
+                                         Target="{Binding ElementName=OffsetBox}" />
+                    <StackPanel x:Name="OffsetRow" Margin="0,4,0,0" Orientation="Horizontal">
+                        <DockPanel Width="140">
+                            <TextBlock Style="{StaticResource UnitTextStyle}" />
+                            <TextBox x:Name="OffsetBox" Text="{Binding OffsetXText, UpdateSourceTrigger=PropertyChanged}" />
+                        </DockPanel>
+                        <!-- Same gap as between the fields, so it reads as an action of the row, not part of
+                             "px". Stretch: the button style is shorter than a text box and would sit centered. -->
+                        <Button Margin="16,0,0,0" MinWidth="88" VerticalAlignment="Stretch" Command="{Binding CenterXCommand}"
+                                Content="{x:Static res:Strings.Placement_CenterX}"
+                                ToolTip="{x:Static res:Strings.Placement_CenterX_Tooltip}"
+                                AutomationProperties.HelpText="{x:Static res:Strings.Placement_CenterX_Tooltip}" />
+                    </StackPanel>
+                    <controls:FieldError Width="{Binding ActualWidth, ElementName=OffsetRow}"
+                                         Text="{Binding OffsetXError}" Target="{Binding ElementName=OffsetBox}" />
+                </StackPanel>
+            </WrapPanel>
+            <!-- Saved values that are too large for this display: they still save, the window is shrunk to fit -->
+            <controls:FieldError IsWarning="True" Text="{Binding FitWarning}" />
+        </StackPanel>
+
+    </StackPanel>
+</UserControl>

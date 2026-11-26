@@ -1,0 +1,313 @@
+using System.Runtime.InteropServices;
+
+using ForceBorderlessWindowed.Models;
+
+using Windows.Win32;
+using Windows.Win32.Foundation;
+using Windows.Win32.Graphics.Gdi;
+using Windows.Win32.UI.WindowsAndMessaging;
+
+namespace ForceBorderlessWindowed.Services;
+
+internal sealed class WindowManipulator : IWindowManipulator
+{
+    // Everything that draws a title bar or border. WS_CAPTION = WS_BORDER | WS_DLGFRAME.
+    // The min/max boxes and the system menu only make sense with a title bar, so they go too.
+    private const WINDOW_STYLE FrameStyles =
+        WINDOW_STYLE.WS_CAPTION | WINDOW_STYLE.WS_THICKFRAME | WINDOW_STYLE.WS_SYSMENU
+        | WINDOW_STYLE.WS_MINIMIZEBOX | WINDOW_STYLE.WS_MAXIMIZEBOX;
+
+    // Only the extended styles that draw edges. Unlike Borderless Gaming we keep WS_EX_LAYERED
+    // (removing it can make a window invisible) and WS_EX_APPWINDOW (removes the taskbar button).
+    private const WINDOW_EX_STYLE EdgeExStyles =
+        WINDOW_EX_STYLE.WS_EX_DLGMODALFRAME | WINDOW_EX_STYLE.WS_EX_WINDOWEDGE
+        | WINDOW_EX_STYLE.WS_EX_CLIENTEDGE | WINDOW_EX_STYLE.WS_EX_STATICEDGE;
+
+    // State bits that describe the current situation instead of the look. Restoring them
+    // from a snapshot would contradict the actual state (e.g. WS_MAXIMIZE on a normal window).
+    private const WINDOW_STYLE StateStyles =
+        WINDOW_STYLE.WS_MAXIMIZE | WINDOW_STYLE.WS_MINIMIZE | WINDOW_STYLE.WS_VISIBLE;
+
+    // FRAMECHANGED: Windows recalculates the frame. Without it the old border stays until the next redraw.
+    // NOACTIVATE / NOZORDER / NOOWNERZORDER: don't steal focus or reorder windows.
+    // ASYNCWINDOWPOS: hand the move to the game's thread instead of waiting for it, so a game that is
+    // busy loading doesn't block the watcher (and with it alt-tab handling for the mouse lock).
+    private const SET_WINDOW_POS_FLAGS PositionFlags =
+        SET_WINDOW_POS_FLAGS.SWP_FRAMECHANGED | SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE
+        | SET_WINDOW_POS_FLAGS.SWP_NOZORDER | SET_WINDOW_POS_FLAGS.SWP_NOOWNERZORDER
+        | SET_WINDOW_POS_FLAGS.SWP_ASYNCWINDOWPOS;
+
+    private const int ErrorAccessDenied = 5;
+
+    public bool Exists(nint windowHandle) => PInvoke.IsWindow(new HWND(windowHandle));
+
+    public bool HasFrame(nint windowHandle)
+    {
+        var style = (WINDOW_STYLE)(uint)PInvoke.GetWindowLong(new HWND(windowHandle), WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        return (style & (WINDOW_STYLE.WS_CAPTION | WINDOW_STYLE.WS_THICKFRAME)) != 0;
+    }
+
+    public WindowSnapshot? Capture(nint windowHandle)
+    {
+        var hwnd = new HWND(windowHandle);
+        var placement = new WINDOWPLACEMENT { length = (uint)Marshal.SizeOf<WINDOWPLACEMENT>() };
+        if (!PInvoke.IsWindow(hwnd) || !PInvoke.GetWindowPlacement(hwnd, ref placement))
+        {
+            return null;
+        }
+
+        // GetWindowPlacement instead of GetWindowRect: it also knows the normal size of a maximized window
+        var normal = placement.rcNormalPosition;
+        return new WindowSnapshot
+        {
+            Style = (uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE),
+            ExStyle = (uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE),
+            NormalRect = (normal.left, normal.top, normal.right, normal.bottom),
+            // A minimized window is never "zoomed", even one that comes back maximized: the placement knows that
+            WasMaximized = PInvoke.IsZoomed(hwnd)
+                || (PInvoke.IsIconic(hwnd) && (placement.flags & WINDOWPLACEMENT_FLAGS.WPF_RESTORETOMAXIMIZED) != 0),
+        };
+    }
+
+    public (int Width, int Height)? GetClientSize(nint windowHandle) =>
+        PInvoke.GetClientRect(new HWND(windowHandle), out var rect) ? (rect.right - rect.left, rect.bottom - rect.top) : null;
+
+    // State bits plus "disabled" (a game disables its window while it shows a dialog): none of them is a change of mode
+    private const uint LookIgnoredStyles = (uint)(StateStyles | WINDOW_STYLE.WS_DISABLED);
+
+    public WindowLook? CaptureLook(nint windowHandle, WindowPlacement placement, MonitorBounds monitor)
+    {
+        var hwnd = new HWND(windowHandle);
+        if (!PInvoke.IsWindow(hwnd))
+        {
+            return null;
+        }
+
+        // What we asked for, not GetWindowRect: the move is asynchronous and may not have happened yet.
+        // long: same overflow guard as in MakeBorderless (an out-of-range position never gets this far, but stays safe)
+        var left = (int)Math.Clamp((long)monitor.Left + placement.OffsetX, int.MinValue, int.MaxValue);
+        var top = PlacementCalculator.GetTop(placement, monitor);
+        return new WindowLook
+        {
+            Style = (uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE) & ~LookIgnoredStyles,
+            Bounds = (left, top, left + placement.Width, top + placement.Height),
+        };
+    }
+
+    public bool GameSwitchedMode(nint windowHandle, WindowLook look)
+    {
+        var hwnd = new HWND(windowHandle);
+        if (!PInvoke.IsWindow(hwnd) || HasFrame(windowHandle))
+        {
+            return false;   // gone, or windowed again: then it's simply made borderless again
+        }
+
+        var style = (uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE) & ~LookIgnoredStyles;
+        if (style == look.Style)
+        {
+            return false;   // not restyled since our change
+        }
+
+        // Popup (no title bar at all, the usual style of fullscreen and "windowed fullscreen") turned on or off
+        if (((style ^ look.Style) & (uint)WINDOW_STYLE.WS_POPUP) != 0)
+        {
+            return true;
+        }
+
+        // Some other bit changed. Only a switch if the game also took over the size: the window fills its whole
+        // monitor, in a rectangle we didn't set (a fullscreen placement of ours looks the same, but is ours)
+        if (!PInvoke.GetWindowRect(hwnd, out var rect) || (rect.left, rect.top, rect.right, rect.bottom) == look.Bounds)
+        {
+            return false;
+        }
+
+        var info = new MONITORINFO { cbSize = (uint)Marshal.SizeOf<MONITORINFO>() };
+        var monitor = PInvoke.MonitorFromWindow(hwnd, MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST);
+        return PInvoke.GetMonitorInfo(monitor, ref info)
+            && rect.left <= info.rcMonitor.left && rect.top <= info.rcMonitor.top
+            && rect.right >= info.rcMonitor.right && rect.bottom >= info.rcMonitor.bottom;
+    }
+
+    public WindowChangeResult MakeBorderless(nint windowHandle, WindowPlacement placement, MonitorBounds monitor, out bool modified)
+    {
+        modified = false;
+        var hwnd = new HWND(windowHandle);
+
+        if (!PInvoke.IsWindow(hwnd) || PInvoke.IsIconic(hwnd))
+        {
+            return WindowChangeResult.Skipped;
+        }
+
+        var style = (WINDOW_STYLE)(uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        var exStyle = (WINDOW_EX_STYLE)(uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
+        var newStyle = style & ~FrameStyles;
+        var newExStyle = exStyle & ~EdgeExStyles;
+
+        // Physical pixels: this app is PerMonitorV2 DPI aware, like MonitorBounds and WindowPlacement.
+        // Computed as long: settings are checked on load, but an int sum must never wrap around to a wrong position.
+        var left = (long)monitor.Left + placement.OffsetX;
+        if (left is < int.MinValue or > int.MaxValue)
+        {
+            return WindowChangeResult.Failed;   // nothing touched yet
+        }
+
+        var x = (int)left;
+        var y = PlacementCalculator.GetTop(placement, monitor);
+        var isMaximized = PInvoke.IsZoomed(hwnd);
+
+        // Idempotent: our own SetWindowPos below triggers a "location changed" event too. Ending up here
+        // with nothing to do is what stops that from becoming a loop.
+        if (!isMaximized && style == newStyle && exStyle == newExStyle
+            && PInvoke.GetWindowRect(hwnd, out var rect)
+            && rect.left == x && rect.top == y
+            && rect.right - rect.left == placement.Width && rect.bottom - rect.top == placement.Height)
+        {
+            return WindowChangeResult.NoChange;
+        }
+
+        // Hung: changing the styles would wait for the game until it responds again. Try again later.
+        // Only after the "nothing to do" check above, which only reads (sends the game no messages): a borderless
+        // game that is busy loading stays "borderless" instead of turning into "not responding" for a while.
+        if (PInvoke.IsHungAppWindow(hwnd))
+        {
+            return WindowChangeResult.NotResponding;
+        }
+
+        // A maximized window ignores size changes. SHOWNOACTIVATE un-maximizes without stealing focus
+        // (SW_RESTORE would activate it).
+        if (isMaximized)
+        {
+            PInvoke.ShowWindow(hwnd, SHOW_WINDOW_CMD.SW_SHOWNOACTIVATE);
+            modified = true;   // ShowWindow's return value says nothing about success, so assume it worked
+
+            // Read again: the styles above still have WS_MAXIMIZE, and writing them back would mark the
+            // window as maximized again (it would then count as "changed" on every check and trip the fight limit)
+            newStyle = (WINDOW_STYLE)(uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE) & ~FrameStyles;
+            newExStyle = (WINDOW_EX_STYLE)(uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE) & ~EdgeExStyles;
+        }
+
+        var result = SetStyles(hwnd, (uint)newStyle, (uint)newExStyle, ref modified);
+        if (result != WindowChangeResult.Applied)
+        {
+            return result;
+        }
+
+        // Onto another monitor: first only move it there, then set the final size. Moved and resized in one go,
+        // apps that scale per monitor (e.g. Paint) can miss or misapply the new display's scaling (WM_DPICHANGED)
+        // until the user drags them once. The first move lets Windows switch the scaling and the app resize
+        // itself; the second, queued behind it on the app's thread (both async), then sets our size.
+        // Same approach as PowerToys FancyZones. Monitors are compared instead of DPI values: an app that
+        // ignores scaling reports misleading ones, and an extra move between equally scaled monitors is harmless.
+        if (!IsOnMonitorAt(hwnd, monitor.Left, monitor.Top)
+            && !PInvoke.SetWindowPos(hwnd, HWND.Null, x, y, 0, 0, PositionFlags | SET_WINDOW_POS_FLAGS.SWP_NOSIZE))
+        {
+            return LastErrorResult();
+        }
+
+        return PInvoke.SetWindowPos(hwnd, HWND.Null, x, y, placement.Width, placement.Height, PositionFlags)
+            ? WindowChangeResult.Applied
+            : LastErrorResult();
+    }
+
+    public WindowChangeResult Restore(nint windowHandle, WindowSnapshot snapshot)
+    {
+        var hwnd = new HWND(windowHandle);
+        if (!PInvoke.IsWindow(hwnd))
+        {
+            return WindowChangeResult.Skipped;
+        }
+
+        if (PInvoke.IsHungAppWindow(hwnd))
+        {
+            return WindowChangeResult.NotResponding;
+        }
+
+        // Only the frame and edge bits come from the snapshot: those are the ones MakeBorderless removed.
+        // Everything else belongs to the game and stays as it is now: visible/minimized, disabled while it
+        // shows a dialog, topmost, layered...
+        var currentStyle = (uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+        var currentExStyle = (uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
+        var style = (currentStyle & ~(uint)FrameStyles) | (snapshot.Style & (uint)FrameStyles);
+        var exStyle = (currentExStyle & ~(uint)EdgeExStyles) | (snapshot.ExStyle & (uint)EdgeExStyles);
+
+        var restoredAny = false;   // not needed here: a failed restore is simply retried as a whole
+        var result = SetStyles(hwnd, style, exStyle, ref restoredAny);
+        if (result != WindowChangeResult.Applied)
+        {
+            return result;
+        }
+
+        // Make the frame visible again before moving, then let SetWindowPlacement put back
+        // the normal size/position and the maximized state in one go
+        if (!PInvoke.SetWindowPos(hwnd, HWND.Null, 0, 0, 0, 0,
+                PositionFlags | SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOSIZE))
+        {
+            return LastErrorResult();
+        }
+
+        var (left, top, right, bottom) = snapshot.NormalRect;
+        var placement = new WINDOWPLACEMENT
+        {
+            length = (uint)Marshal.SizeOf<WINDOWPLACEMENT>(),
+            rcNormalPosition = new RECT(left, top, right, bottom),
+        };
+
+        if (!PInvoke.IsWindowVisible(hwnd))
+        {
+            // Hidden by the game since we changed it (e.g. it switched to another window): only put the
+            // bounds back. Every other show command would make it visible again. A hidden window can't be
+            // set to maximized, so that part of the original state is left to the game.
+            placement.showCmd = SHOW_WINDOW_CMD.SW_HIDE;
+        }
+        else if (PInvoke.IsIconic(hwnd))
+        {
+            // Minimized by the user (e.g. paused while alt-tabbed): stay minimized, but come back
+            // in the original size/position, or maximized, once the user opens it again
+            placement.showCmd = SHOW_WINDOW_CMD.SW_SHOWMINNOACTIVE;
+            if (snapshot.WasMaximized)
+            {
+                placement.flags = WINDOWPLACEMENT_FLAGS.WPF_RESTORETOMAXIMIZED;
+            }
+        }
+        else
+        {
+            // Maximizing always activates the window; that's acceptable for a rare restore
+            placement.showCmd = snapshot.WasMaximized ? SHOW_WINDOW_CMD.SW_SHOWMAXIMIZED : SHOW_WINDOW_CMD.SW_SHOWNOACTIVATE;
+        }
+
+        return PInvoke.SetWindowPlacement(hwnd, in placement) ? WindowChangeResult.Applied : LastErrorResult();
+    }
+
+    /// <summary>Whether the window is (mostly) on the monitor whose top-left corner is at the given point.</summary>
+    private static bool IsOnMonitorAt(HWND hwnd, int left, int top) =>
+        PInvoke.MonitorFromWindow(hwnd, MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONEAREST)
+        == PInvoke.MonitorFromPoint(new System.Drawing.Point(left, top), MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONULL);
+
+    /// <param name="modified">Set to true as soon as one of the two styles was changed.</param>
+    private static WindowChangeResult SetStyles(HWND hwnd, uint style, uint exStyle, ref bool modified)
+    {
+        // SetWindowLong returns the previous value, which can legitimately be 0.
+        // Only "0 and last error set" means failure, so the last error has to be cleared first.
+        Marshal.SetLastPInvokeError(0);
+        if (PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style) == 0
+            && Marshal.GetLastPInvokeError() != 0)
+        {
+            return LastErrorResult();
+        }
+
+        modified = true;
+
+        Marshal.SetLastPInvokeError(0);
+        if (PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle) == 0
+            && Marshal.GetLastPInvokeError() != 0)
+        {
+            return LastErrorResult();
+        }
+
+        return WindowChangeResult.Applied;
+    }
+
+    // Windows blocks changes to windows of elevated processes (UIPI) with "access denied"
+    private static WindowChangeResult LastErrorResult() =>
+        Marshal.GetLastPInvokeError() == ErrorAccessDenied ? WindowChangeResult.AccessDenied : WindowChangeResult.Failed;
+}
