@@ -1,0 +1,79 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+  # The release workflow runs this same build, so a release exe is built exactly like every CI exe
+  workflow_call:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  # A newer push to a pull request makes the older run pointless; runs on main all finish
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      # The SDK from global.json builds; the .NET 10 runtime runs the tests (the app targets net10.0-windows)
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          dotnet-version: 10.0.x
+
+      # Release, so warnings are errors (Directory.Build.props). PathMap is turned off for this build only: with it,
+      # the coverage tool can't match the code to the source files and reports nothing. The published exe below
+      # is built separately and keeps it.
+      - name: Build
+        run: dotnet build -c Release -p:PathMap=
+
+      - name: Test
+        run: >-
+          dotnet test -c Release --no-build
+          --results-directory TestResults
+          --report-xunit-trx
+          --coverage --coverage-output-format cobertura --coverage-output coverage.cobertura.xml
+
+      - name: Coverage summary
+        if: always()
+        shell: pwsh
+        run: |
+          $file = 'TestResults/coverage.cobertura.xml'
+          if (-not (Test-Path $file)) { exit 0 }
+          $coverage = ([xml](Get-Content $file)).coverage
+          $lines = '{0:P1}' -f [double]$coverage.'line-rate'
+          $branches = '{0:P1}' -f [double]$coverage.'branch-rate'
+          @(
+            '### Code coverage'
+            ''
+            '| Lines | Branches |'
+            '|---|---|'
+            "| $lines ($($coverage.'lines-covered') of $($coverage.'lines-valid')) | $branches |"
+          ) | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: test-results
+          path: TestResults/
+          retention-days: 30
+
+      # The portable single-file exe, as described in Properties/PublishProfiles/Portable.pubxml
+      - name: Publish
+        run: dotnet publish ForceBorderlessWindowed -p:PublishProfile=Portable
+
+      - name: Upload exe
+        uses: actions/upload-artifact@v7
+        with:
+          name: ForceBorderlessWindowed
+          path: ForceBorderlessWindowed/bin/Publish/ForceBorderlessWindowed.exe
+          if-no-files-found: error
+          retention-days: 30

@@ -1,0 +1,19 @@
+version: 2
+updates:
+  - package-ecosystem: nuget
+    directory: /
+    schedule:
+      interval: weekly
+    ignore:
+      # The app targets .NET 10: Microsoft.Extensions stays on 10.x to match the runtime it runs on
+      - dependency-name: Microsoft.Extensions.*
+        update-types: [version-update:semver-major]
+    groups:
+      # Test packages are updated together in one pull request
+      test:
+        patterns: [Microsoft.NET.Test.Sdk, Microsoft.Testing.*, xunit*]
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

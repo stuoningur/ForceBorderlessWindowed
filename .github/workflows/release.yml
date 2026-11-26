@@ -1,0 +1,75 @@
+name: Release
+
+# Push a tag that matches <Version> in ForceBorderlessWindowed.csproj, e.g.:
+#   git tag v0.9.0-beta
+#   git push origin v0.9.0-beta
+# The result is a draft release: check the notes on GitHub, then publish it.
+on:
+  push:
+    tags: ['v*']
+
+permissions:
+  contents: read
+
+jobs:
+  check-version:
+    runs-on: windows-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Tag matches the project version
+        id: version
+        shell: pwsh
+        run: |
+          $version = (dotnet msbuild ForceBorderlessWindowed -getProperty:Version).Trim()
+          if ("v$version" -cne $env:GITHUB_REF_NAME) {
+            Write-Error "Tag $env:GITHUB_REF_NAME doesn't match the project version $version (expected tag v$version)"
+            exit 1
+          }
+          "version=$version" | Out-File $env:GITHUB_OUTPUT -Append -Encoding utf8
+
+  build:
+    needs: check-version
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: [check-version, build]
+    runs-on: windows-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/download-artifact@v8
+        with:
+          name: ForceBorderlessWindowed
+          path: release
+
+      - name: Checksum
+        shell: pwsh
+        working-directory: release
+        run: |
+          $hash = (Get-FileHash ForceBorderlessWindowed.exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  ForceBorderlessWindowed.exe" | Out-File SHA256SUMS.txt -Encoding ascii
+
+      # A version with a suffix ("0.9.0-beta") is marked as a pre-release
+      - name: Create draft release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ needs.check-version.outputs.version }}
+        run: |
+          $arguments = @(
+            'release', 'create', $env:GITHUB_REF_NAME,
+            'release/ForceBorderlessWindowed.exe', 'release/SHA256SUMS.txt',
+            '--draft', '--generate-notes', '--verify-tag',
+            '--title', "Force Borderless Windowed $env:VERSION"
+          )
+          if ($env:VERSION.Contains('-')) { $arguments += '--prerelease' }
+          gh @arguments
