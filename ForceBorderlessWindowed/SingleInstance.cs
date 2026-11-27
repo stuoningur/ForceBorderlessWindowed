@@ -314,14 +314,18 @@ internal sealed class SingleInstance : IDisposable
     /// </summary>
     private static void AllowFirstInstanceToForeground()
     {
+        // Both names, like FindRunningInstance: this exe may be renamed, the admin autostart copy never is
         using var self = Process.GetCurrentProcess();
-        foreach (var other in Process.GetProcessesByName(self.ProcessName))
+        foreach (var name in new[] { self.ProcessName, AppInfo.AssemblyName }.Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            using (other)
+            foreach (var other in Process.GetProcessesByName(name))
             {
-                if (other.Id != self.Id && other.SessionId == self.SessionId)
+                using (other)
                 {
-                    PInvoke.AllowSetForegroundWindow((uint)other.Id);
+                    if (other.Id != self.Id && other.SessionId == self.SessionId)
+                    {
+                        PInvoke.AllowSetForegroundWindow((uint)other.Id);
+                    }
                 }
             }
         }
