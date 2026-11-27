@@ -74,6 +74,7 @@ public partial class GamesViewModel : ObservableObject
         Profiles.CollectionChanged += (_, _) =>
         {
             OnPropertyChanged(nameof(IsEmpty));
+            RemoveAllCommand.NotifyCanExecuteChanged();
             OnChanged();
         };
         SelectedProfile = Profiles.FirstOrDefault();
@@ -464,17 +465,35 @@ public partial class GamesViewModel : ObservableObject
         }
 
         var index = Profiles.IndexOf(profile);
-        profile.PropertyChanged -= OnProfileChanged;
-        profile.Placement.PropertyChanged -= OnProfileChanged;
-        profile.Placement.Detach();
-        _quietUntilSave.Remove(profile);
-        Profiles.RemoveAt(index);
+        RemoveProfile(profile);
 
         // Select the neighbor, so you can keep removing without clicking into the list again
         SelectedProfile = Profiles.Count == 0 ? null : Profiles[Math.Min(index, Profiles.Count - 1)];
     }
 
     private bool CanRemove() => SelectedProfile is not null;
+
+    /// <summary>Empties the list; like Remove, it takes effect with Save. The view asks first.</summary>
+    [RelayCommand(CanExecute = nameof(CanRemoveAll))]
+    private void RemoveAll()
+    {
+        SelectedProfile = null;
+        foreach (var profile in Profiles.ToList())
+        {
+            RemoveProfile(profile);
+        }
+    }
+
+    private bool CanRemoveAll() => Profiles.Count > 0;
+
+    private void RemoveProfile(GameProfileViewModel profile)
+    {
+        profile.PropertyChanged -= OnProfileChanged;
+        profile.Placement.PropertyChanged -= OnProfileChanged;
+        profile.Placement.Detach();
+        _quietUntilSave.Remove(profile);
+        Profiles.Remove(profile);
+    }
 
     /// <summary>A game in the list takes this program already (exe name, and its exe file and title filters).</summary>
     private bool IsConfigured(RunningProgram program) => Profiles.Any(p => p.Matches(program));

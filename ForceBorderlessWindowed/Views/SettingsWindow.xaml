@@ -197,6 +197,16 @@
                                 <views:PlacementEditor DataContext="{Binding DefaultPlacement}" />
                             </Border>
 
+                            <!-- Asks first (OnResetToDefaultsClick); then it's an edit like any other, applied with Save -->
+                            <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
+                                       Text="{x:Static res:Strings.Settings_Section_Reset}" />
+                            <controls:SettingsCard Glyph="&#xE777;"
+                                                   Header="{x:Static res:Strings.Settings_Reset_Header}"
+                                                   Description="{x:Static res:Strings.Settings_Reset_Description}">
+                                <Button Content="{x:Static res:Strings.Settings_Reset_Button}" Click="OnResetToDefaultsClick"
+                                        AutomationProperties.Name="{Binding Content, RelativeSource={RelativeSource Self}}" />
+                            </controls:SettingsCard>
+
                             <TextBlock Style="{StaticResource SectionHeaderTextStyle}"
                                        Text="{x:Static res:Strings.Settings_Section_About}" />
                             <controls:SettingsCard Glyph="&#xE946;"
@@ -340,12 +350,26 @@
                                     <AccessText Text="{x:Static res:Strings.Games_AddMenu}" />
                                 </StackPanel>
                             </Button>
-                            <Button MinWidth="88" Margin="0,0,0,8" Command="{Binding RemoveCommand}"
+                            <Button MinWidth="88" Margin="0,0,8,8" Command="{Binding RemoveCommand}"
                                     AutomationProperties.Name="{Binding Source={x:Static res:Strings.Games_Remove}, Converter={x:Static views:AccessKeyConverter.Instance}}">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:FontIcon Margin="0,0,8,0" Style="{StaticResource IconTextStyle}" Text="&#xE74D;" />
                                     <AccessText Text="{x:Static res:Strings.Games_Remove}" />
                                 </StackPanel>
+                            </Button>
+                            <!-- Asks first (OnRemoveAllGamesClick); applied with Save like Remove -->
+                            <Button MinWidth="88" Margin="0,0,0,8" Click="OnRemoveAllGamesClick"
+                                    Content="{x:Static res:Strings.Games_RemoveAll}"
+                                    AutomationProperties.Name="{x:Static res:Strings.Games_RemoveAll}">
+                                <Button.Style>
+                                    <Style TargetType="Button" BasedOn="{StaticResource {x:Type Button}}">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsEmpty}" Value="True">
+                                                <Setter Property="IsEnabled" Value="False" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </Button.Style>
                             </Button>
                         </WrapPanel>
 

@@ -964,4 +964,37 @@
   <data name="Games_Add_NoMatch" xml:space="preserve">
     <value>Kein laufendes Fenster passt zu „{0}“.</value>
   </data>
+  <data name="Settings_Section_Reset" xml:space="preserve">
+    <value>Zurücksetzen</value>
+  </data>
+  <data name="Settings_Reset_Header" xml:space="preserve">
+    <value>Auf Standard zurücksetzen</value>
+  </data>
+  <data name="Settings_Reset_Description" xml:space="preserve">
+    <value>Sprache, Design, Standard-Fensterplatzierung und Tastenkürzel gehen auf ihre Standardwerte zurück. Deine Spiele und „Mit Windows starten“ bleiben, wie sie sind.</value>
+  </data>
+  <data name="Settings_Reset_Button" xml:space="preserve">
+    <value>Zurücksetzen…</value>
+  </data>
+  <data name="Settings_Reset_Confirm_Title" xml:space="preserve">
+    <value>Auf Standard zurücksetzen?</value>
+  </data>
+  <data name="Settings_Reset_Confirm_Message" xml:space="preserve">
+    <value>Sprache, Design, die Standard-Fensterplatzierung und alle Tastenkürzel gehen auf ihre Standardwerte zurück. Erst Speichern übernimmt das; Schließen ohne Speichern macht es rückgängig.</value>
+  </data>
+  <data name="Settings_Reset_Confirm_Primary" xml:space="preserve">
+    <value>_Zurücksetzen</value>
+  </data>
+  <data name="Games_RemoveAll" xml:space="preserve">
+    <value>Alle entfernen</value>
+  </data>
+  <data name="Games_RemoveAll_Confirm_Title" xml:space="preserve">
+    <value>Alle Spiele entfernen?</value>
+  </data>
+  <data name="Games_RemoveAll_Confirm_Message" xml:space="preserve">
+    <value>Alle Spiele werden aus der Liste entfernt. Erst Speichern übernimmt das; Schließen ohne Speichern holt sie zurück.</value>
+  </data>
+  <data name="Games_RemoveAll_Confirm_Primary" xml:space="preserve">
+    <value>Alle _entfernen</value>
+  </data>
 </root>

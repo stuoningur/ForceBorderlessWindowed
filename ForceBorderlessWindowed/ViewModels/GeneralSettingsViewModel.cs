@@ -99,6 +99,18 @@ public partial class GeneralSettingsViewModel : ObservableObject
 
     public PlacementEditorViewModel DefaultPlacement { get; }
 
+    /// <summary>
+    /// Language, theme and the default placement as in a fresh install (see <see cref="AppSettings"/>), as edits that
+    /// take effect with Save. "Start with Windows" stays: it is a Windows registration, not a preference of this window.
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        var defaults = new AppSettings();
+        SelectedLanguage = Languages.FirstOrDefault(l => l.CultureName == defaults.Language) ?? Languages[0];
+        SelectedTheme = Themes.FirstOrDefault(t => t.Theme == defaults.Theme) ?? Themes[0];
+        DefaultPlacement.ResetTo(defaults.DefaultPlacement);
+    }
+
     /// <summary>About: "Version 0.9.0-beta · © 2026 …", what a bug report needs.</summary>
     public string AboutDescription { get; } =
         $"{string.Format(CultureInfo.CurrentCulture, Formats.Settings_About_Version, AppInfo.DisplayVersion)} · {AppInfo.Copyright}";

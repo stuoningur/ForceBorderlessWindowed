@@ -58,6 +58,19 @@ public partial class HotkeysViewModel : ObservableObject
 
     private IEnumerable<HotkeyEditorViewModel> All => Global.Concat(WindowShortcuts);
 
+    /// <summary>Every hotkey, sounds and messages as in a fresh install, as edits that take effect with Save.</summary>
+    public void ResetToDefaults()
+    {
+        var defaults = new HotkeySettings();
+        foreach (var editor in All)
+        {
+            editor.Value = defaults.Get(editor.Action);
+        }
+
+        PlaySounds = defaults.PlaySounds;
+        ShowMessages = defaults.ShowMessages;
+    }
+
     public HotkeySettings ToSettings() =>
         All.Aggregate(new HotkeySettings { ShowMessages = ShowMessages, PlaySounds = PlaySounds },
             (settings, editor) => settings.With(editor.Action, editor.Value));

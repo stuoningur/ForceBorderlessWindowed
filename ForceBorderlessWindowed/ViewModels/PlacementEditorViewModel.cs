@@ -63,13 +63,7 @@ public partial class PlacementEditorViewModel : ObservableObject
     {
         _defaultEditor = defaultEditor;
 
-        Choice = settings switch
-        {
-            null when CanUseDefault => PlacementChoice.UseDefault,
-            { Mode: PlacementMode.Custom } => PlacementChoice.Custom,
-            { Mode: PlacementMode.GameSize } => PlacementChoice.GameSize,
-            _ => PlacementChoice.Automatic,
-        };
+        Choice = ChoiceFor(settings);
 
         // Kept while Custom is selected (and saved with it), so switching back to Automatic restores it
         SelectedAspectRatio = AspectRatios.FirstOrDefault(r => r.Ratio == settings?.AspectRatio) ?? AspectRatios[0];
@@ -103,6 +97,42 @@ public partial class PlacementEditorViewModel : ObservableObject
     }
 
     public bool CanUseDefault => _defaultEditor is not null;
+
+    private PlacementChoice ChoiceFor(PlacementSettings? settings) => settings switch
+    {
+        null when CanUseDefault => PlacementChoice.UseDefault,
+        { Mode: PlacementMode.Custom } => PlacementChoice.Custom,
+        { Mode: PlacementMode.GameSize } => PlacementChoice.GameSize,
+        _ => PlacementChoice.Automatic,
+    };
+
+    /// <summary>
+    /// Puts every choice back to <paramref name="settings"/>, as an edit: it takes effect with Save, and Close without
+    /// saving undoes it (used by "Reset to defaults"). Without custom values the custom fields get the automatic values
+    /// of the display, as on a fresh game.
+    /// </summary>
+    public void ResetTo(PlacementSettings settings)
+    {
+        Choice = ChoiceFor(settings);
+        SelectedAspectRatio = AspectRatios.FirstOrDefault(r => r.Ratio == settings.AspectRatio) ?? AspectRatios[0];
+        KeepAspectRatio = settings.KeepAspectRatio;
+        Horizontal = settings.EffectiveHorizontal();
+        Vertical = settings.Vertical;
+        if (DisplayOptions.Count > 0)
+        {
+            SelectedDisplay = DisplayOptions.FirstOrDefault(o => o.Matches(settings.Display, settings.DisplayId)) ?? DisplayOptions[0];
+        }
+
+        if (settings.Custom is { } custom)
+        {
+            Prefill(custom);
+            _prefill = null;   // real values, not a pre-fill
+        }
+        else if (AutomaticPlacement is { } automatic)
+        {
+            Prefill(automatic);
+        }
+    }
 
     /// <summary>For "Show on display"; null = no such button (set by the tab that owns this editor).</summary>
     public IScreenPreview? ScreenPreview

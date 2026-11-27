@@ -968,4 +968,37 @@
   <data name="Games_Add_NoMatch" xml:space="preserve">
     <value>No running window matches “{0}”.</value>
   </data>
+  <data name="Settings_Section_Reset" xml:space="preserve">
+    <value>Reset</value>
+  </data>
+  <data name="Settings_Reset_Header" xml:space="preserve">
+    <value>Reset to defaults</value>
+  </data>
+  <data name="Settings_Reset_Description" xml:space="preserve">
+    <value>Language, theme, default window placement and hotkeys go back to their defaults. Your games and “Start with Windows” stay as they are.</value>
+  </data>
+  <data name="Settings_Reset_Button" xml:space="preserve">
+    <value>Reset…</value>
+  </data>
+  <data name="Settings_Reset_Confirm_Title" xml:space="preserve">
+    <value>Reset to defaults?</value>
+  </data>
+  <data name="Settings_Reset_Confirm_Message" xml:space="preserve">
+    <value>Language, theme, the default window placement and all hotkeys go back to their defaults. Nothing changes until you save, and closing without saving undoes it.</value>
+  </data>
+  <data name="Settings_Reset_Confirm_Primary" xml:space="preserve">
+    <value>_Reset</value>
+  </data>
+  <data name="Games_RemoveAll" xml:space="preserve">
+    <value>Remove all</value>
+  </data>
+  <data name="Games_RemoveAll_Confirm_Title" xml:space="preserve">
+    <value>Remove all games?</value>
+  </data>
+  <data name="Games_RemoveAll_Confirm_Message" xml:space="preserve">
+    <value>Every game is removed from the list. Nothing changes until you save, and closing without saving brings them back.</value>
+  </data>
+  <data name="Games_RemoveAll_Confirm_Primary" xml:space="preserve">
+    <value>_Remove all</value>
+  </data>
 </root>

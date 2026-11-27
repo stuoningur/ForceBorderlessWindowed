@@ -349,6 +349,26 @@ public partial class SettingsWindow : Window
     private void OnShowLicensesClick(object sender, RoutedEventArgs e) =>
         MessageDialog.ShowLongText(this, Strings.Settings_About_Licenses, AppInfo.ReadThirdPartyNotices());
 
+    /// <summary>Asks, then resets the General tab and the hotkeys as edits (applied with Save, see ResetToDefaults).</summary>
+    private void OnResetToDefaultsClick(object sender, RoutedEventArgs e)
+    {
+        if (MessageDialog.Show(this, Strings.Settings_Reset_Confirm_Title, Strings.Settings_Reset_Confirm_Message,
+                Strings.Settings_Reset_Confirm_Primary, closeText: Strings.Common_Cancel) == MessageDialogResult.Primary)
+        {
+            _viewModel.ResetToDefaults();
+        }
+    }
+
+    /// <summary>Asks, then empties the games list (applied with Save, like Remove).</summary>
+    private void OnRemoveAllGamesClick(object sender, RoutedEventArgs e)
+    {
+        if (MessageDialog.Show(this, Strings.Games_RemoveAll_Confirm_Title, Strings.Games_RemoveAll_Confirm_Message,
+                Strings.Games_RemoveAll_Confirm_Primary, closeText: Strings.Common_Cancel) == MessageDialogResult.Primary)
+        {
+            _viewModel.Games.RemoveAllCommand.Execute(null);
+        }
+    }
+
     /// <summary>Set once the unsaved changes were dealt with, so the Close that follows doesn't ask again.</summary>
     private bool _closeConfirmed;
 

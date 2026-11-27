@@ -206,6 +206,16 @@ public partial class SettingsViewModel : ObservableObject
     [RelayCommand]
     private void TogglePause() => _settings.Save(_settings.Current with { IsPaused = !_settings.Current.IsPaused });
 
+    /// <summary>
+    /// "Reset to defaults": General tab (without "Start with Windows") and every hotkey, not the games. Edits like any
+    /// other: they take effect with Save, Close without saving undoes them. The view asks first.
+    /// </summary>
+    public void ResetToDefaults()
+    {
+        General.ResetToDefaults();
+        Hotkeys.ResetToDefaults();
+    }
+
     public GeneralSettingsViewModel General { get; }
 
     public GamesViewModel Games { get; }
