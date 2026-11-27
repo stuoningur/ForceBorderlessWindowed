@@ -205,6 +205,14 @@
             </WrapPanel>
             <!-- Saved values that are too large for this display: they still save, the window is shrunk to fit -->
             <controls:FieldError IsWarning="True" Text="{Binding FitWarning}" />
+            <!-- Too large for the display (saved values, or edited ones with errors): shrink them on request.
+                 Custom values stay as they are when the display changes, so this is the way to make them fit. -->
+            <Button Margin="0,8,0,0" HorizontalAlignment="Left"
+                    Command="{Binding FitToDisplayCommand}"
+                    Content="{x:Static res:Strings.Placement_FitToDisplay}"
+                    ToolTip="{x:Static res:Strings.Placement_FitToDisplay_Tooltip}"
+                    AutomationProperties.HelpText="{x:Static res:Strings.Placement_FitToDisplay_Tooltip}"
+                    Visibility="{Binding CanFitToDisplay, Converter={StaticResource BoolToVisibility}}" />
         </StackPanel>
 
     </StackPanel>

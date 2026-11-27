@@ -62,6 +62,51 @@ public class PlacementEditorViewModelTests
     }
 
     [Fact]
+    public void PickingAnotherDisplay_KeepsTheCustomValues()
+    {
+        var ultrawide = new MonitorBounds(1920, 0, 3440, 1440);
+        var editor = new PlacementEditorViewModel(
+            new PlacementSettings { Mode = PlacementMode.Custom, Custom = new WindowPlacement(1280, 720, 100) }, defaultEditor: null);
+        editor.SetDisplays([new DisplayInfo("a", "A", 1, FullHd, IsPrimary: true), new DisplayInfo("b", "B", 2, ultrawide, IsPrimary: false)], FullHd);
+        var original = editor.SelectedDisplay;
+
+        editor.SelectedDisplay = editor.DisplayOptions.Single(o => o.Id == "b");
+        Assert.Equal(new WindowPlacement(1280, 720, 100), editor.ToSettings()!.Custom);
+
+        editor.SelectedDisplay = original;
+        Assert.Equal(new WindowPlacement(1280, 720, 100), editor.ToSettings()!.Custom);
+    }
+
+    [Fact]
+    public void PickingAnotherDisplay_UpdatesTheHiddenUntouchedPrefill()
+    {
+        var ultrawide = new MonitorBounds(1920, 0, 3440, 1440);
+        var editor = new PlacementEditorViewModel(new PlacementSettings(), defaultEditor: null);
+        editor.SetDisplays([new DisplayInfo("a", "A", 1, FullHd, IsPrimary: true), new DisplayInfo("b", "B", 2, ultrawide, IsPrimary: false)], FullHd);
+        Assert.Equal((1920, 1080), (editor.Width, editor.Height));
+
+        editor.SelectedDisplay = editor.DisplayOptions.Single(o => o.Id == "b");
+        editor.IsCustom = true;
+
+        Assert.Equal(new WindowPlacement(2560, 1440, 440), editor.ToSettings()!.Custom);
+    }
+
+    [Fact]
+    public void FitToDisplay_ShrinksOnlyWhatIsTooLarge()
+    {
+        var editor = EditorFor(new WindowPlacement(1600, 1440, 500));
+        Assert.NotNull(editor.FitWarning);
+        Assert.True(editor.CanFitToDisplay);
+
+        editor.FitToDisplayCommand.Execute(null);
+
+        Assert.Equal(new WindowPlacement(1600, 1080, 320), editor.ToSettings()!.Custom);
+        Assert.Null(editor.FitWarning);
+        Assert.False(editor.CanFitToDisplay);
+        Assert.True(editor.IsValid);
+    }
+
+    [Fact]
     public void SavedValues_ThatFit_GiveNoWarning()
     {
         var editor = EditorFor(new WindowPlacement(1280, 720, 0));

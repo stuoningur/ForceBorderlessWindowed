@@ -128,7 +128,7 @@ public partial class PlacementEditorViewModel : ObservableObject
             }
 
             field = value;
-            UpdateMonitor(resetCustomValues: false);   // never changes the custom values (see UpdateMonitor)
+            UpdateMonitor();
             OnSummaryChanged();
             OnPropertyChanged(nameof(DefaultSummary));   // "Use default" on the game's display: see DefaultOnGameMonitor
         }
@@ -252,7 +252,7 @@ public partial class PlacementEditorViewModel : ObservableObject
 
     partial void OnKeepAspectRatioChanged(bool value)
     {
-        UpdateMonitor(resetCustomValues: false);
+        UpdateMonitor();
         OnSummaryChanged();
     }
 
@@ -260,7 +260,7 @@ public partial class PlacementEditorViewModel : ObservableObject
     // even where the size doesn't (a monitor narrower than both ratios gets the full monitor either way).
     partial void OnSelectedAspectRatioChanged(AspectRatioOption value)
     {
-        UpdateMonitor(resetCustomValues: false);
+        UpdateMonitor();
         OnSummaryChanged();
     }
 
@@ -520,7 +520,7 @@ public partial class PlacementEditorViewModel : ObservableObject
             _rebuildingOptions = false;
         }
 
-        UpdateMonitor(resetCustomValues: false);
+        UpdateMonitor();
     }
 
     /// <summary>
@@ -625,7 +625,9 @@ public partial class PlacementEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(IsValid));
         OnPropertyChanged(nameof(FirstInvalidField));
         OnPropertyChanged(nameof(Preview));
+        OnPropertyChanged(nameof(CanFitToDisplay));
         AlignXCommand.NotifyCanExecuteChanged();
+        FitToDisplayCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>
@@ -689,15 +691,60 @@ public partial class PlacementEditorViewModel : ObservableObject
 
     partial void OnSelectedDisplayChanged(DisplayOption? oldValue, DisplayOption? newValue)
     {
-        // The user picked another display: custom values made for the old display rarely fit the new one,
-        // so start over from the new display's automatic values (like on a fresh game)
+        // The user picked another display. Custom values the user has seen stay as they are: the fit warning or the
+        // field errors say if they don't fit, and "Fit to display" shrinks them. Only the untouched pre-fill of
+        // hidden custom fields follows the display, so choosing Custom afterwards starts from this display's values.
         var chosenByUser = !_rebuildingOptions && oldValue is not null && newValue is not null;
-        UpdateMonitor(resetCustomValues: chosenByUser);
+        var refillPrefill = chosenByUser && Choice != PlacementChoice.Custom && IsUntouchedPrefill;
+        UpdateMonitor();
+        if (refillPrefill && AutomaticPlacement is { } automatic)
+        {
+            Prefill(automatic);
+        }
     }
 
-    /// <summary>Recalculates preview and warning for the selected display.</summary>
-    /// <param name="resetCustomValues">Overwrite the custom fields with the automatic values of the display, if it is a different monitor.</param>
-    private void UpdateMonitor(bool resetCustomValues)
+    /// <summary>The custom values pre-filled from the automatic result, or null once there are saved or typed ones.</summary>
+    private WindowPlacement? _prefill;
+
+    private bool IsUntouchedPrefill =>
+        _prefill is { } prefill
+        && WidthInputError is null && HeightInputError is null && OffsetXInputError is null
+        && (Width, Height, OffsetX) == (prefill.Width, prefill.Height, prefill.OffsetX);
+
+    /// <summary>
+    /// Fills the custom fields with a starting point. Through the texts, not the numbers: that also clears the fields'
+    /// errors. Setting only the numbers would leave an error (and its invalid text) in place wherever the number
+    /// didn't change, e.g. a mistyped offset next to an automatic offset of 0.
+    /// </summary>
+    private void Prefill(WindowPlacement values)
+    {
+        WidthText = values.Width.ToString(CultureInfo.CurrentCulture);
+        HeightText = values.Height.ToString(CultureInfo.CurrentCulture);
+        OffsetXText = values.OffsetX.ToString(CultureInfo.CurrentCulture);
+        _prefill = values;
+    }
+
+    /// <summary>
+    /// Custom values that are too large for the display they're checked against (the fit warning for saved ones, the
+    /// field errors for edited ones): "Fit to display" shrinks them, see <see cref="FitToDisplay"/>.
+    /// </summary>
+    public bool CanFitToDisplay => Choice == PlacementChoice.Custom && _fitMonitor is { } monitor && ExceedsMonitor(monitor);
+
+    /// <summary>Shrinks the custom values to fit the display, as the watcher would: only what's too large changes.</summary>
+    [RelayCommand(CanExecute = nameof(CanFitToDisplay))]
+    private void FitToDisplay()
+    {
+        if (_fitMonitor is { } monitor)
+        {
+            var fitted = PlacementCalculator.FitToMonitor(new WindowPlacement(Width, Height, OffsetX), monitor);
+            WidthText = fitted.Width.ToString(CultureInfo.CurrentCulture);
+            HeightText = fitted.Height.ToString(CultureInfo.CurrentCulture);
+            OffsetXText = fitted.OffsetX.ToString(CultureInfo.CurrentCulture);
+        }
+    }
+
+    /// <summary>Recalculates preview and warning for the selected display. Never changes custom values the user has seen.</summary>
+    private void UpdateMonitor()
     {
         if (_windowMonitor is not { } windowMonitor || SelectedDisplay is not { } display)
         {
@@ -706,7 +753,6 @@ public partial class PlacementEditorViewModel : ObservableObject
 
         var selection = new PlacementSettings { Display = display.Target, DisplayId = display.Id };
         var (monitor, found) = PlacementCalculator.ResolveDisplay(selection, _displays, GameMonitor ?? windowMonitor);
-        var previousMonitor = _monitor;
         _monitor = monitor;
 
         // "The display the game is on": the settings window's monitor is only a guess, good for the preview but
@@ -721,17 +767,10 @@ public partial class PlacementEditorViewModel : ObservableObject
         OnValidationChanged();   // the monitor size may have changed without anything else changing
 
         // Without saved custom values, pre-fill the custom fields with the automatic result as a starting point.
-        // Never just because the settings window moved to another monitor: that would silently change saved values.
-        // Through the texts, not the numbers: that also clears the fields' errors. Setting only the numbers
-        // would leave an error (and its invalid text) in place wherever the number didn't change, e.g. a
-        // mistyped offset next to an automatic offset of 0.
-        // A different choice that ends up on the same monitor (e.g. "Primary display" and "Display 1") keeps
-        // the values: they were made for exactly this monitor.
-        if (!_customValuesInitialized || (resetCustomValues && previousMonitor != monitor))
+        // Never just because the settings window moved to another monitor: that would silently change values.
+        if (!_customValuesInitialized)
         {
-            WidthText = automatic.Width.ToString(CultureInfo.CurrentCulture);
-            HeightText = automatic.Height.ToString(CultureInfo.CurrentCulture);
-            OffsetXText = automatic.OffsetX.ToString(CultureInfo.CurrentCulture);
+            Prefill(automatic);
             _customValuesInitialized = true;
         }
     }

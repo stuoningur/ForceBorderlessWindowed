@@ -895,4 +895,10 @@
   <data name="Games_MatchConflict" xml:space="preserve">
     <value>The running window “{0}” goes to “{1}” instead: its filters are more specific.</value>
   </data>
+  <data name="Placement_FitToDisplay" xml:space="preserve">
+    <value>Fit to display</value>
+  </data>
+  <data name="Placement_FitToDisplay_Tooltip" xml:space="preserve">
+    <value>Shrinks the window so it fits on the display. Only the values that are too large change.</value>
+  </data>
 </root>
