@@ -1,4 +1,4 @@
-using System.Runtime.InteropServices;
+﻿using System.Runtime.InteropServices;
 
 using ForceBorderlessWindowed.Models;
 
@@ -128,9 +128,10 @@ internal sealed class WindowManipulator : IWindowManipulator
             && rect.right >= info.rcMonitor.right && rect.bottom >= info.rcMonitor.bottom;
     }
 
-    public WindowChangeResult MakeBorderless(nint windowHandle, WindowRect placement, MonitorBounds monitor, out bool modified)
+    public WindowChangeResult MakeBorderless(nint windowHandle, WindowRect placement, MonitorBounds monitor, out bool modified, out WindowChangeError? error)
     {
         modified = false;
+        error = null;
         var hwnd = new HWND(windowHandle);
 
         if (!PInvoke.IsWindow(hwnd) || PInvoke.IsIconic(hwnd))
@@ -148,6 +149,7 @@ internal sealed class WindowManipulator : IWindowManipulator
         var left = (long)monitor.Left + placement.OffsetX;
         if (left is < int.MinValue or > int.MaxValue)
         {
+            error = new WindowChangeError("position out of range", 0);
             return WindowChangeResult.Failed;   // nothing touched yet
         }
 
@@ -186,7 +188,7 @@ internal sealed class WindowManipulator : IWindowManipulator
             newExStyle = (WINDOW_EX_STYLE)(uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE) & ~EdgeExStyles;
         }
 
-        var result = SetStyles(hwnd, (uint)newStyle, (uint)newExStyle, ref modified);
+        var result = SetStyles(hwnd, (uint)newStyle, (uint)newExStyle, ref modified, out error);
         if (result != WindowChangeResult.Applied)
         {
             return result;
@@ -201,16 +203,17 @@ internal sealed class WindowManipulator : IWindowManipulator
         if (!IsOnMonitorAt(hwnd, monitor.Left, monitor.Top)
             && !PInvoke.SetWindowPos(hwnd, HWND.Null, x, y, 0, 0, PositionFlags | SET_WINDOW_POS_FLAGS.SWP_NOSIZE))
         {
-            return LastErrorResult();
+            return LastErrorResult("SetWindowPos (move to display)", out error);
         }
 
         return PInvoke.SetWindowPos(hwnd, HWND.Null, x, y, placement.Width, placement.Height, PositionFlags)
             ? WindowChangeResult.Applied
-            : LastErrorResult();
+            : LastErrorResult("SetWindowPos", out error);
     }
 
-    public WindowChangeResult Restore(nint windowHandle, WindowSnapshot snapshot)
+    public WindowChangeResult Restore(nint windowHandle, WindowSnapshot snapshot, out WindowChangeError? error)
     {
+        error = null;
         var hwnd = new HWND(windowHandle);
         if (!PInvoke.IsWindow(hwnd))
         {
@@ -231,7 +234,7 @@ internal sealed class WindowManipulator : IWindowManipulator
         var exStyle = (currentExStyle & ~(uint)EdgeExStyles) | (snapshot.ExStyle & (uint)EdgeExStyles);
 
         var restoredAny = false;   // not needed here: a failed restore is simply retried as a whole
-        var result = SetStyles(hwnd, style, exStyle, ref restoredAny);
+        var result = SetStyles(hwnd, style, exStyle, ref restoredAny, out error);
         if (result != WindowChangeResult.Applied)
         {
             return result;
@@ -242,7 +245,7 @@ internal sealed class WindowManipulator : IWindowManipulator
         if (!PInvoke.SetWindowPos(hwnd, HWND.Null, 0, 0, 0, 0,
                 PositionFlags | SET_WINDOW_POS_FLAGS.SWP_NOMOVE | SET_WINDOW_POS_FLAGS.SWP_NOSIZE))
         {
-            return LastErrorResult();
+            return LastErrorResult("SetWindowPos (frame)", out error);
         }
 
         var (left, top, right, bottom) = snapshot.NormalRect;
@@ -275,7 +278,9 @@ internal sealed class WindowManipulator : IWindowManipulator
             placement.showCmd = snapshot.WasMaximized ? SHOW_WINDOW_CMD.SW_SHOWMAXIMIZED : SHOW_WINDOW_CMD.SW_SHOWNOACTIVATE;
         }
 
-        return PInvoke.SetWindowPlacement(hwnd, in placement) ? WindowChangeResult.Applied : LastErrorResult();
+        return PInvoke.SetWindowPlacement(hwnd, in placement)
+            ? WindowChangeResult.Applied
+            : LastErrorResult("SetWindowPlacement", out error);
     }
 
     /// <summary>Whether the window is (mostly) on the monitor whose top-left corner is at the given point.</summary>
@@ -284,15 +289,16 @@ internal sealed class WindowManipulator : IWindowManipulator
         == PInvoke.MonitorFromPoint(new System.Drawing.Point(left, top), MONITOR_FROM_FLAGS.MONITOR_DEFAULTTONULL);
 
     /// <param name="modified">Set to true as soon as one of the two styles was changed.</param>
-    private static WindowChangeResult SetStyles(HWND hwnd, uint style, uint exStyle, ref bool modified)
+    private static WindowChangeResult SetStyles(HWND hwnd, uint style, uint exStyle, ref bool modified, out WindowChangeError? error)
     {
+        error = null;
         // SetWindowLong returns the previous value, which can legitimately be 0.
         // Only "0 and last error set" means failure, so the last error has to be cleared first.
         Marshal.SetLastPInvokeError(0);
         if (PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE, (int)style) == 0
             && Marshal.GetLastPInvokeError() != 0)
         {
-            return LastErrorResult();
+            return LastErrorResult("SetWindowLong (style)", out error);
         }
 
         modified = true;
@@ -301,13 +307,17 @@ internal sealed class WindowManipulator : IWindowManipulator
         if (PInvoke.SetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE, (int)exStyle) == 0
             && Marshal.GetLastPInvokeError() != 0)
         {
-            return LastErrorResult();
+            return LastErrorResult("SetWindowLong (extended style)", out error);
         }
 
         return WindowChangeResult.Applied;
     }
 
     // Windows blocks changes to windows of elevated processes (UIPI) with "access denied"
-    private static WindowChangeResult LastErrorResult() =>
-        Marshal.GetLastPInvokeError() == ErrorAccessDenied ? WindowChangeResult.AccessDenied : WindowChangeResult.Failed;
+    private static WindowChangeResult LastErrorResult(string operation, out WindowChangeError? error)
+    {
+        var code = Marshal.GetLastPInvokeError();
+        error = new WindowChangeError(operation, code);
+        return code == ErrorAccessDenied ? WindowChangeResult.AccessDenied : WindowChangeResult.Failed;
+    }
 }

@@ -50,7 +50,7 @@ The app only changes the window's style, size and position through normal Window
 ## Where it keeps its files
 
 - Settings: `%APPDATA%\ForceBorderlessWindowed\settings.json`
-- Logs (14 days) and the list of windows it changed: `%LOCALAPPDATA%\ForceBorderlessWindowed`
+- Logs (the last 14 log files) and the list of windows it changed: `%LOCALAPPDATA%\ForceBorderlessWindowed`
 - The tray menu has Troubleshooting → Open log folder.
 
 If the app is closed unexpectedly while a game is borderless, it puts that window back the next time it starts.

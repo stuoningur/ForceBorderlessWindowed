@@ -93,9 +93,10 @@ internal sealed class FakeDesktop : IWindowManipulator, IWindowQueries, IProcess
         ? new WindowSnapshot { Style = w.HasFrame ? 0x00CF0000u : 0, NormalRect = w.Rect }
         : null;
 
-    public WindowChangeResult MakeBorderless(nint windowHandle, WindowRect placement, MonitorBounds monitor, out bool modified)
+    public WindowChangeResult MakeBorderless(nint windowHandle, WindowRect placement, MonitorBounds monitor, out bool modified, out WindowChangeError? error)
     {
         modified = false;
+        error = null;
         if (Find(windowHandle) is not { } w || w.Minimized)
         {
             return WindowChangeResult.Skipped;
@@ -115,6 +116,7 @@ internal sealed class FakeDesktop : IWindowManipulator, IWindowQueries, IProcess
 
         if (w.AccessDenied)
         {
+            error = new WindowChangeError("SetWindowLong (style)", 5);
             return WindowChangeResult.AccessDenied;
         }
 
@@ -131,8 +133,9 @@ internal sealed class FakeDesktop : IWindowManipulator, IWindowQueries, IProcess
 
     public bool GameSwitchedMode(nint windowHandle, WindowLook look) => Find(windowHandle) is { SwitchedOwnMode: true, HasFrame: false };
 
-    public WindowChangeResult Restore(nint windowHandle, WindowSnapshot snapshot)
+    public WindowChangeResult Restore(nint windowHandle, WindowSnapshot snapshot, out WindowChangeError? error)
     {
+        error = null;
         if (Find(windowHandle) is not { } w)
         {
             return WindowChangeResult.Skipped;

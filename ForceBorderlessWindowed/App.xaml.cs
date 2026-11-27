@@ -101,7 +101,8 @@ public partial class App : Application, IAppShell
 
         try
         {
-            LogStarting(AppInfo.DisplayVersion, CultureInfo.CurrentUICulture.Name);
+            LogStarting(AppInfo.DisplayVersion, Environment.OSVersion.Version, Environment.IsPrivilegedProcess,
+                StartedAtSignIn, CultureInfo.CurrentUICulture.Name);
             if (ReplacedVersion is { } replaced)
             {
                 LogReplacedOlderVersion(replaced);
@@ -406,12 +407,13 @@ public partial class App : Application, IAppShell
     {
         try
         {
+            // Without a log file there are no details to point to, and no folder worth opening
             var answer = MessageDialog.Show(
                 _settingsWindow,
                 Strings.Error_Unexpected_Title,
-                Strings.Error_Unexpected_Message,
+                UnexpectedErrorMessage(LoggingSetup.FileLogActive),
                 primaryText: Strings.Common_OK,
-                secondaryText: Strings.Tray_OpenLogFolder,
+                secondaryText: LoggingSetup.FileLogActive ? Strings.Tray_OpenLogFolder : null,
                 details: ex.Message);
 
             if (answer == MessageDialogResult.Secondary)
@@ -423,13 +425,18 @@ public partial class App : Application, IAppShell
         {
             // The themed dialog itself failed (e.g. broken resources): the plain system box always works
             LogUiThreadException(dialogError);
-            MessageBox.Show($"{Strings.Error_Unexpected_Message}\n\n{ex.Message}", Strings.AppName,
+            MessageBox.Show($"{UnexpectedErrorMessage(LoggingSetup.FileLogActive)}\n\n{ex.Message}", Strings.AppName,
                 MessageBoxButton.OK, MessageBoxImage.Error);
         }
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Starting version {Version}, UI culture {Culture}")]
-    private partial void LogStarting(string version, string culture);
+    /// <summary>"Details are in the log file" only if there is one (see <see cref="LoggingSetup.FileLogActive"/>).</summary>
+    internal static string UnexpectedErrorMessage(bool logWritten) =>
+        logWritten ? Strings.Error_Unexpected_Message : Strings.Error_Unexpected_MessageNoLog;
+
+    // Who runs and how, first in every run: several runs share a day's file
+    [LoggerMessage(Level = LogLevel.Information, Message = "Starting version {Version} on Windows {WindowsVersion}, administrator: {Elevated}, started at sign-in: {AtSignIn}, UI culture {Culture}")]
+    private partial void LogStarting(string version, Version windowsVersion, bool elevated, bool atSignIn, string culture);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Took over from the older version {OldVersion}, which exited for this one")]
     private partial void LogReplacedOlderVersion(Version oldVersion);

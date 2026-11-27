@@ -4,6 +4,14 @@ Every release gets a section here before its tag is pushed: the release workflow
 and stops if the section is missing. Newest first; the heading is `## [version] - date`, with the version exactly as
 in `<Version>` of `ForceBorderlessWindowed.csproj`.
 
+## [Unreleased]
+
+### Changed
+
+- More useful logs: when a window can't be changed or restored, the log names the Windows function that refused and its error code. Each start records the Windows version, whether the app runs as administrator and whether it started at sign-in. Lines show the time zone and a shorter source name, and "made borderless" lines give the exact position and display.
+- If the app fails while starting, before its log is set up, it now shows a message and writes a `crash-....txt` file to the log folder instead of closing silently.
+- The error message no longer says details are in the log file when no log file could be written.
+
 ## [0.10.0-beta] - 2026-11-27
 
 ### Added

@@ -274,6 +274,9 @@
   <data name="Error_Unexpected_Message" xml:space="preserve">
     <value>An unexpected error occurred. Details have been written to the log file.</value>
   </data>
+  <data name="Error_Unexpected_MessageNoLog" xml:space="preserve">
+    <value>An unexpected error occurred. No log file could be written, so the details are only shown here.</value>
+  </data>
   <data name="SettingsWindow_Title" xml:space="preserve">
     <value>Force Borderless Windowed – Settings</value>
   </data>

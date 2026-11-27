@@ -1,4 +1,4 @@
-using System.IO;
+﻿using System.IO;
 
 using ForceBorderlessWindowed.Models;
 
@@ -666,7 +666,7 @@ internal sealed partial class WindowTracker(
             }
         }
 
-        var result = manipulator.MakeBorderless(window.Handle, placement, monitor, out var modified);
+        var result = manipulator.MakeBorderless(window.Handle, placement, monitor, out var modified, out var error);
         tracked.ChangeStarting = false;   // nothing changed after all: the check's last write drops it again
 
         // Also when only part of the change worked: that window needs restoring as well
@@ -681,22 +681,26 @@ internal sealed partial class WindowTracker(
             tracked.LastAppliedLook = manipulator.CaptureLook(window.Handle, placement, monitor) ?? tracked.LastAppliedLook;
         }
 
-        // Log changes only, otherwise every check would add a line
+        // Log changes only, otherwise every check would add a line. A failure with a new cause is a change too.
+        var newFailure = tracked.LastResult != result || tracked.LastError != error;
         switch (result)
         {
             case WindowChangeResult.Applied:
-                LogApplied(window.ExecutableName, placement.Width, placement.Height, placement.OffsetX);
+                LogApplied(window.ExecutableName, placement.Width, placement.Height,
+                    monitor.Left + placement.OffsetX, monitor.Top + placement.OffsetY,
+                    monitor.Width, monitor.Height, monitor.Left, monitor.Top);
                 CheckFightLimit(tracked, now);
                 break;
-            case WindowChangeResult.AccessDenied when tracked.LastResult != result:
-                LogAccessDenied(window.ExecutableName);
+            case WindowChangeResult.AccessDenied when newFailure:
+                LogAccessDenied(window.ExecutableName, error?.Operation, modified);
                 break;
-            case WindowChangeResult.Failed when tracked.LastResult != result:
-                LogFailed(window.ExecutableName);
+            case WindowChangeResult.Failed when newFailure:
+                LogFailed(window.ExecutableName, error?.Operation, error?.Win32Error, modified);
                 break;
         }
 
         tracked.LastResult = result;
+        tracked.LastError = error;
     }
 
     private void CheckFightLimit(TrackedWindow tracked, DateTime now)
@@ -749,14 +753,16 @@ internal sealed partial class WindowTracker(
             }
 
             WindowChangeResult result;
+            WindowChangeError? error;
             try
             {
-                result = manipulator.Restore(handle, tracked.Original);
+                result = manipulator.Restore(handle, tracked.Original, out error);
             }
             catch (Exception ex)
             {
                 LogWindowError(ex, tracked.ExecutableName);
                 result = WindowChangeResult.Failed;
+                error = null;
             }
 
             var done = result is WindowChangeResult.Applied or WindowChangeResult.NoChange
@@ -772,13 +778,14 @@ internal sealed partial class WindowTracker(
             // Log once per kind of problem, not on every retry. Skipped and not responding are expected to pass.
             // On exit, what's left is logged once at the end instead (see LogWindowsLeftForNextStart).
             if (!_stopping && result is not (WindowChangeResult.Skipped or WindowChangeResult.NotResponding)
-                && tracked.LastRestoreResult != result)
+                && (tracked.LastRestoreResult != result || tracked.LastRestoreError != error))
             {
-                LogRestoreRetrying(tracked.ExecutableName, reason, result);
+                LogRestoreRetrying(tracked.ExecutableName, reason, result, error?.Operation, error?.Win32Error);
             }
 
             tracked.RestorePending = true;
             tracked.LastRestoreResult = result;
+            tracked.LastRestoreError = error;
         }
     }
 
@@ -901,6 +908,9 @@ internal sealed partial class WindowTracker(
         public WindowSnapshot Original { get; } = original;
         public WindowChangeResult? LastResult { get; set; }
 
+        /// <summary>What failed in the last change, so a retry that fails the same way isn't logged again.</summary>
+        public WindowChangeError? LastError { get; set; }
+
         /// <summary>How the window looked after our last successful change; null until then.</summary>
         public WindowLook? LastAppliedLook { get; set; }
 
@@ -925,17 +935,21 @@ internal sealed partial class WindowTracker(
         /// <summary>Result of the last failed restore, so a retry that fails the same way isn't logged again.</summary>
         public WindowChangeResult? LastRestoreResult { get; set; }
 
+        /// <summary>What failed in the last failed restore, see <see cref="LastRestoreResult"/>.</summary>
+        public WindowChangeError? LastRestoreError { get; set; }
+
         /// <summary>Times of our recent changes, for the fight limit.</summary>
         public Queue<DateTime> RecentApplies { get; } = new();
 
         public DateTime PausedUntil { get; set; }
     }
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "{Exe}: window made borderless once with the hotkey")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "{Exe}: borderless once requested with the hotkey")]
     private partial void LogOneOffAdded(string exe);
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "{Exe}: made borderless ({Width}x{Height}, offset {OffsetX})")]
-    private partial void LogApplied(string exe, int width, int height, int offsetX);
+    // Screen coordinates in physical pixels, the display by its bounds: names aren't unique, and this is what was used
+    [LoggerMessage(Level = LogLevel.Information, Message = "{Exe}: made borderless, {Width}x{Height} at {X},{Y} on the {DisplayWidth}x{DisplayHeight} display at {DisplayLeft},{DisplayTop}")]
+    private partial void LogApplied(string exe, int width, int height, int x, int y, int displayWidth, int displayHeight, int displayLeft, int displayTop);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "{Exe}: selected display \"{Display}\" is not connected, using the primary display")]
     private partial void LogDisplayMissing(string exe, string display);
@@ -943,8 +957,8 @@ internal sealed partial class WindowTracker(
     [LoggerMessage(Level = LogLevel.Information, Message = "{Exe}: restored ({Reason}) -> {Result}")]
     private partial void LogRestored(string exe, string reason, WindowChangeResult result);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "{Exe}: restoring ({Reason}) failed with {Result}, trying again on the next check")]
-    private partial void LogRestoreRetrying(string exe, string reason, WindowChangeResult result);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "{Exe}: restoring ({Reason}) failed with {Result} at {Operation}, Win32 error {Win32Error}; trying again on the next check")]
+    private partial void LogRestoreRetrying(string exe, string reason, WindowChangeResult result, string? operation, int? win32Error);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "{Exe}: could not be restored on exit ({Result}); it is put back at the next start if it still runs then and is off or paused")]
     private partial void LogLeftForNextStart(string exe, WindowChangeResult result);
@@ -958,11 +972,11 @@ internal sealed partial class WindowTracker(
     [LoggerMessage(Level = LogLevel.Information, Message = "{Exe}: the game switched to its own fullscreen or borderless mode, left as it is and not restored ({When})")]
     private partial void LogGameWentFrameless(string exe, string when);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "{Exe}: access denied, the game probably runs as administrator")]
-    private partial void LogAccessDenied(string exe);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "{Exe}: access denied at {Operation}, the game probably runs as administrator (window partly changed: {PartlyChanged})")]
+    private partial void LogAccessDenied(string exe, string? operation, bool partlyChanged);
 
-    [LoggerMessage(Level = LogLevel.Warning, Message = "{Exe}: changing the window failed")]
-    private partial void LogFailed(string exe);
+    [LoggerMessage(Level = LogLevel.Warning, Message = "{Exe}: changing the window failed at {Operation}, Win32 error {Win32Error} (window partly changed: {PartlyChanged})")]
+    private partial void LogFailed(string exe, string? operation, int? win32Error, bool partlyChanged);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "{Exe}: not changed yet, its original state can't be saved for a restore after a crash; trying again")]
     private partial void LogNotRecorded(string exe);

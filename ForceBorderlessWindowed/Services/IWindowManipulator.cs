@@ -27,6 +27,12 @@ public enum WindowChangeResult
 }
 
 /// <summary>
+/// Which call refused a change and its Win32 error code (GetLastError), for the log: a bare "failed" can't tell
+/// causes apart. Only set with <see cref="WindowChangeResult.AccessDenied"/> or <see cref="WindowChangeResult.Failed"/>.
+/// </summary>
+public readonly record struct WindowChangeError(string Operation, int Win32Error);
+
+/// <summary>
 /// The window's state before we changed it, for <see cref="IWindowManipulator.Restore"/>.
 /// Opaque on purpose: only the manipulator knows what's inside.
 /// </summary>
@@ -84,7 +90,8 @@ public interface IWindowManipulator
     /// True if the window was changed at all, even when a later step failed (e.g. un-maximized and styles
     /// changed, but moving it was refused). Such a half-changed window still needs restoring.
     /// </param>
-    WindowChangeResult MakeBorderless(nint windowHandle, WindowRect placement, MonitorBounds monitor, out bool modified);
+    /// <param name="failure">What failed, with AccessDenied or Failed; otherwise null.</param>
+    WindowChangeResult MakeBorderless(nint windowHandle, WindowRect placement, MonitorBounds monitor, out bool modified, out WindowChangeError? failure);
 
     /// <summary>
     /// The window's look now (right after our change to <paramref name="placement"/> on <paramref name="monitor"/>),
@@ -102,5 +109,6 @@ public interface IWindowManipulator
     bool GameSwitchedMode(nint windowHandle, WindowLook look);
 
     /// <summary>Puts back styles, size, position and maximized state from <paramref name="snapshot"/>.</summary>
-    WindowChangeResult Restore(nint windowHandle, WindowSnapshot snapshot);
+    /// <param name="failure">What failed, with AccessDenied or Failed; otherwise null.</param>
+    WindowChangeResult Restore(nint windowHandle, WindowSnapshot snapshot, out WindowChangeError? failure);
 }
