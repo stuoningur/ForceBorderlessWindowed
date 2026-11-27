@@ -1,3 +1,5 @@
+using System.Runtime.InteropServices;
+
 using Windows.Win32;
 using Windows.Win32.Foundation;
 using Windows.Win32.Graphics.Dwm;
@@ -6,9 +8,12 @@ using Windows.Win32.UI.WindowsAndMessaging;
 
 namespace ForceBorderlessWindowed.Services;
 
-/// <summary>Read-only Win32 helpers shared by the "Add" menu and the game window finder.</summary>
+/// <summary>Read-only Win32 helpers shared by the "Add a game" dialog, the hotkeys and the game window finder.</summary>
 internal static class WindowQueries
 {
+    /// <summary>The longest path Windows supports (with long paths turned on), in characters.</summary>
+    private const int MaxPathLength = 32767;
+
     /// <summary>All top-level windows, in z-order (topmost first).</summary>
     public static List<HWND> GetTopLevelWindows()
     {
@@ -111,7 +116,7 @@ internal static class WindowQueries
         RECT rect;
         if (PInvoke.IsIconic(hwnd))
         {
-            var placement = new WINDOWPLACEMENT { length = (uint)System.Runtime.InteropServices.Marshal.SizeOf<WINDOWPLACEMENT>() };
+            var placement = new WINDOWPLACEMENT { length = (uint)Marshal.SizeOf<WINDOWPLACEMENT>() };
             if (!PInvoke.GetWindowPlacement(hwnd, ref placement))
             {
                 return 0;
@@ -164,13 +169,24 @@ internal static class WindowQueries
 
         try
         {
-            var buffer = new char[1024];
-            fixed (char* p = buffer)
+            // Usual paths fit the first buffer. The app is long-path aware, so a game installed deeper is asked again
+            // with more room, up to the longest path Windows has (32767 characters)
+            for (var length = 1024; ; length = Math.Min(length * 4, MaxPathLength + 1))
             {
-                var size = (uint)buffer.Length;
-                return PInvoke.QueryFullProcessImageName(process, PROCESS_NAME_FORMAT.PROCESS_NAME_WIN32, p, &size)
-                    ? new string(p, 0, (int)size)
-                    : null;
+                var buffer = new char[length];
+                fixed (char* p = buffer)
+                {
+                    var size = (uint)buffer.Length;
+                    if (PInvoke.QueryFullProcessImageName(process, PROCESS_NAME_FORMAT.PROCESS_NAME_WIN32, p, &size))
+                    {
+                        return new string(p, 0, (int)size);
+                    }
+                }
+
+                if (Marshal.GetLastPInvokeError() != (int)WIN32_ERROR.ERROR_INSUFFICIENT_BUFFER || length > MaxPathLength)
+                {
+                    return null;
+                }
             }
         }
         finally
