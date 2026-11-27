@@ -4,7 +4,7 @@ Every release gets a section here before its tag is pushed: the release workflow
 and stops if the section is missing. Newest first; the heading is `## [version] - date`, with the version exactly as
 in `<Version>` of `ForceBorderlessWindowed.csproj`.
 
-## [Unreleased]
+## [0.10.2-beta] - 2026-11-27
 
 ### Changed
 
