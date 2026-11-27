@@ -1,5 +1,4 @@
 using System.Windows.Input;
-using System.Windows.Media;
 
 using ForceBorderlessWindowed.Models;
 using ForceBorderlessWindowed.Services;
@@ -15,37 +14,6 @@ public class ResetTests
     private static readonly MonitorBounds Wide = new(1920, 0, 3440, 1440);
     private static readonly DisplayInfo[] Displays =
         [new("a", "A", 1, FullHd, IsPrimary: true), new("b", "B", 2, Wide, IsPrimary: false)];
-
-    private sealed class NoHotkeys : IHotkeyService
-    {
-        public IReadOnlySet<HotkeyAction> FailedHotkeys { get; } = new HashSet<HotkeyAction>();
-
-        public event EventHandler? FailedHotkeysChanged { add { } remove { } }
-
-        public IDisposable Suspend() => new System.IO.MemoryStream();   // any IDisposable
-
-        public bool IsAvailable(Hotkey hotkey) => true;
-
-        public void RetryFailed()
-        {
-        }
-    }
-
-    private sealed class NoStatuses : IGameStatusProvider
-    {
-        public IReadOnlyDictionary<Guid, GameWindowStatus> GetStatuses() => new Dictionary<Guid, GameWindowStatus>();
-
-        public event EventHandler? StatusesChanged { add { } remove { } }
-    }
-
-    private sealed class NoIcons : IGameIconService
-    {
-        public ImageSource? GetIcon(string executableName) => null;
-
-        public ImageSource? Remember(string executableName, string executablePath) => null;
-
-        public ImageSource? GetIconForFile(string path) => null;
-    }
 
     [Fact]
     public void Placement_ResetTo_GivesTheDefaultsBack_AsEdits()
