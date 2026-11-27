@@ -55,8 +55,9 @@ internal sealed class WindowEventHooks : IDisposable
             // SHOW and DESTROY are adjacent event numbers (0x8001-0x8002), so one hook covers both.
             AddGlobalHook(PInvoke.EVENT_OBJECT_DESTROY, PInvoke.EVENT_OBJECT_SHOW);
 
-            // For mouse lock / taskbar hiding, which only apply while the game is in the foreground
-            AddGlobalHook(PInvoke.EVENT_SYSTEM_FOREGROUND, PInvoke.EVENT_SYSTEM_FOREGROUND);
+            // For mouse lock / taskbar hiding, which only apply while the game is in the foreground. Also for our
+            // own windows: switching from the game to the settings window must release them right away too.
+            AddGlobalHook(PInvoke.EVENT_SYSTEM_FOREGROUND, PInvoke.EVENT_SYSTEM_FOREGROUND, includeOwnProcess: true);
             AddGlobalHook(PInvoke.EVENT_SYSTEM_MINIMIZESTART, PInvoke.EVENT_SYSTEM_MINIMIZEEND);   // adjacent: 0x16-0x17
         }
         catch
@@ -68,11 +69,11 @@ internal sealed class WindowEventHooks : IDisposable
         }
     }
 
-    private void AddGlobalHook(uint eventMin, uint eventMax)
+    private void AddGlobalHook(uint eventMin, uint eventMax, bool includeOwnProcess = false)
     {
         // SKIPOWNPROCESS: our own windows (settings, tray menu) are never games
-        var hook = PInvoke.SetWinEventHook(eventMin, eventMax, HMODULE.Null, _proc, 0, 0,
-            PInvoke.WINEVENT_OUTOFCONTEXT | PInvoke.WINEVENT_SKIPOWNPROCESS);
+        var flags = PInvoke.WINEVENT_OUTOFCONTEXT | (includeOwnProcess ? 0 : PInvoke.WINEVENT_SKIPOWNPROCESS);
+        var hook = PInvoke.SetWinEventHook(eventMin, eventMax, HMODULE.Null, _proc, 0, 0, flags);
         if (hook.IsNull)
         {
             throw new InvalidOperationException($"SetWinEventHook failed for events 0x{eventMin:X}-0x{eventMax:X}");
