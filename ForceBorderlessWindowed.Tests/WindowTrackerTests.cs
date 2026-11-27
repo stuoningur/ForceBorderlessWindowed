@@ -649,6 +649,26 @@ public class WindowTrackerTests
         Assert.Equal(original, window.Rect);
     }
 
+    [Theory]
+    [InlineData(true)]
+    [InlineData(false)]
+    public void OneOffWindow_HasItsMovesWatched_LikeAGame(bool withGames)
+    {
+        _desktop.AddWindow(1, 100, GameExe);
+        _desktop.AddWindow(5, 500, "notepad.exe");
+        var settings = withGames ? _settings : _settings with { Games = [] };
+
+        _tracker.ToggleOneOff(5, settings);
+        var watched = _tracker.Reconcile(settings);
+
+        Assert.Contains(500u, watched);
+        Assert.Equal(withGames, watched.Contains(100u));
+
+        // Put back by the hotkey: nothing to watch for it anymore
+        _tracker.ToggleOneOff(5, settings);
+        Assert.DoesNotContain(500u, _tracker.Reconcile(settings));
+    }
+
     [Fact]
     public void OneOff_DoesNotFollowAReusedHandle_IntoAnotherProgram()
     {

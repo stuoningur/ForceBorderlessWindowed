@@ -230,7 +230,7 @@ internal sealed partial class WindowTracker(
     /// One full check: takes over the last run's windows if that's still pending, forgets closed windows, then
     /// makes the game windows borderless (or restores them when paused or turned off).
     /// </summary>
-    /// <returns>The process IDs of the game windows found, whose moves are worth watching.</returns>
+    /// <returns>The process IDs of the game and one-off windows, whose moves are worth watching.</returns>
     public HashSet<uint> Reconcile(AppSettings current)
     {
         if (_recoveryPending)
@@ -396,7 +396,7 @@ internal sealed partial class WindowTracker(
         }
     }
 
-    /// <returns>The process IDs of the game windows found, whose moves are worth watching.</returns>
+    /// <returns>The process IDs of the game and one-off windows, whose moves are worth watching.</returns>
     private HashSet<uint> CheckWindows(AppSettings current)
     {
         var gameProcesses = new HashSet<uint>();
@@ -430,7 +430,7 @@ internal sealed partial class WindowTracker(
 
         if (games.InOrder.Count == 0)
         {
-            HandleOneOffWindows([], current.DefaultPlacement);
+            HandleOneOffWindows([], current.DefaultPlacement, gameProcesses);
             return gameProcesses;
         }
 
@@ -460,12 +460,18 @@ internal sealed partial class WindowTracker(
             }
         }
 
-        HandleOneOffWindows(windows, current.DefaultPlacement);
+        HandleOneOffWindows(windows, current.DefaultPlacement, gameProcesses);
         return gameProcesses;
     }
 
     /// <summary>The one-off windows: like a game window with the default placement, see <see cref="ToggleOneOff"/>.</summary>
-    private void HandleOneOffWindows(IReadOnlyList<GameWindow> gameWindows, PlacementSettings defaultPlacement)
+    /// <param name="watchedProcesses">
+    /// Gets the processes of the one-off windows that stay borderless: their moves are watched like a game's, so a
+    /// program that puts its frame back is noticed right away instead of at the next poll. Added only after the
+    /// main-window choice (see ReleaseReplacedWindows), which must see the games' processes alone.
+    /// </param>
+    private void HandleOneOffWindows(IReadOnlyList<GameWindow> gameWindows, PlacementSettings defaultPlacement,
+        HashSet<uint> watchedProcesses)
     {
         foreach (var handle in _oneOff.Keys.ToList())
         {
@@ -493,6 +499,10 @@ internal sealed partial class WindowTracker(
             {
                 _oneOff.Remove(handle);
                 _ignored.Remove(handle);
+            }
+            else
+            {
+                watchedProcesses.Add(processId);
             }
         }
     }
