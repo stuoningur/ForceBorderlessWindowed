@@ -27,7 +27,7 @@ public partial class HotkeysViewModel : ObservableObject
             new(HotkeyAction.TogglePause, Strings.Hotkeys_TogglePause, Strings.Hotkeys_TogglePause_Description,
                 "", saved.TogglePause),   // Pause
             new(HotkeyAction.AddForegroundGame, Strings.Hotkeys_AddForegroundGame, Strings.Hotkeys_AddForegroundGame_Description,
-                "", saved.AddForegroundGame, Strings.Hotkeys_AddForegroundGame_Details),   // Add
+                "", saved.AddForegroundGame),   // Add
             new(HotkeyAction.ApplyToForeground, Strings.Hotkeys_ApplyToForeground, Strings.Hotkeys_ApplyToForeground_Description,
                 "\uE740", saved.ApplyToForeground, Strings.Hotkeys_ApplyToForeground_Details),   // FullScreen
         ];

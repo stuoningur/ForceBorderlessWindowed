@@ -217,10 +217,7 @@
     <value>Add the game in the foreground</value>
   </data>
   <data name="Hotkeys_AddForegroundGame_Description" xml:space="preserve">
-    <value>Adds the program you're using to the games and makes it borderless.</value>
-  </data>
-  <data name="Hotkeys_AddForegroundGame_Details" xml:space="preserve">
-    <value>While detection is paused, it’s only added, not made borderless.</value>
+    <value>Adds the program you're using to the games and makes it borderless, unless detection is paused.</value>
   </data>
   <data name="Hotkeys_Save" xml:space="preserve">
     <value>Save settings</value>
@@ -379,7 +376,7 @@
     <value>_Executable (e.g. game.exe)</value>
   </data>
   <data name="Games_Enabled" xml:space="preserve">
-    <value>Apply to this game</value>
+    <value>Make borderless</value>
   </data>
   <data name="Games_Placement_Header" xml:space="preserve">
     <value>Window placement</value>
@@ -660,7 +657,7 @@
     <value>Enter the name of the program file, e.g. game.exe.</value>
   </data>
   <data name="Games_Error_DuplicateExe_Field" xml:space="preserve">
-    <value>{0} already uses this program file. To keep both, set “Only this exe file” or a window title on one of them.</value>
+    <value>“{0}” has the same program file and filters. Change “Only this exe file” or the window title on one of them.</value>
   </data>
   <data name="Games_Error_ExeNotFileName_Field" xml:space="preserve">
     <value>Enter only the name of the program file, e.g. game.exe, without a folder.</value>
@@ -855,7 +852,7 @@
     <value>Show a message over the game</value>
   </data>
   <data name="Hotkeys_ShowMessages_Description" xml:space="preserve">
-    <value>A short note over the game when a global hotkey is pressed. Not over games in exclusive fullscreen.</value>
+    <value>A short note over the game when a global hotkey is pressed. Doesn’t appear over games in exclusive fullscreen.</value>
   </data>
   <data name="Tray_Status_NoFrameOne" xml:space="preserve">
     <value>1 game already without frame</value>
@@ -873,7 +870,7 @@
     <value>Show _details…</value>
   </data>
   <data name="Placement_KeepAspectRatio" xml:space="preserve">
-    <value>Keep the shape on narrower displays (bars top and bottom)</value>
+    <value>Keep the aspect ratio on narrower displays (bars top and bottom)</value>
   </data>
   <data name="Placement_Warning_DoesNotFit" xml:space="preserve">
     <value>Larger than this display ({0} × {1}): the game window is shrunk to fit.</value>
@@ -885,7 +882,7 @@
     <value>The notification sound when a global hotkey worked, the error sound when it didn’t.</value>
   </data>
   <data name="Games_MatchConflict" xml:space="preserve">
-    <value>The running window “{0}” goes to “{1}” instead: its filters are more specific.</value>
+    <value>The running window “{0}” matches more than one game and goes to “{1}”.</value>
   </data>
   <data name="Placement_FitToDisplay" xml:space="preserve">
     <value>Fit to display</value>

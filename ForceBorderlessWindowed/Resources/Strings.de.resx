@@ -216,10 +216,7 @@
     <value>Spiel im Vordergrund hinzufügen</value>
   </data>
   <data name="Hotkeys_AddForegroundGame_Description" xml:space="preserve">
-    <value>Fügt das Programm, das du gerade verwendest, zu den Spielen hinzu und macht es randlos.</value>
-  </data>
-  <data name="Hotkeys_AddForegroundGame_Details" xml:space="preserve">
-    <value>Während die Erkennung pausiert ist, wird es nur hinzugefügt, nicht randlos gemacht.</value>
+    <value>Fügt das Programm, das du gerade verwendest, zu den Spielen hinzu und macht es randlos, außer die Erkennung ist pausiert.</value>
   </data>
   <data name="Hotkeys_Save" xml:space="preserve">
     <value>Einstellungen speichern</value>
@@ -377,7 +374,7 @@
     <value>_Programmdatei (z. B. game.exe)</value>
   </data>
   <data name="Games_Enabled" xml:space="preserve">
-    <value>Auf dieses Spiel anwenden</value>
+    <value>Randlos machen</value>
   </data>
   <data name="Games_Placement_Header" xml:space="preserve">
     <value>Fensterplatzierung</value>
@@ -656,7 +653,7 @@
     <value>Gib den Namen der Programmdatei ein, z. B. game.exe.</value>
   </data>
   <data name="Games_Error_DuplicateExe_Field" xml:space="preserve">
-    <value>{0} verwendet diese Programmdatei bereits. Um beide zu behalten, setze bei einem „Nur diese Programmdatei“ oder einen Fenstertitel.</value>
+    <value>„{0}“ hat dieselbe Programmdatei und dieselben Filter. Ändere bei einem der beiden „Nur diese Programmdatei“ oder den Fenstertitel.</value>
   </data>
   <data name="Games_Error_ExeNotFileName_Field" xml:space="preserve">
     <value>Gib nur den Namen der Programmdatei ein, z. B. game.exe, ohne Ordner.</value>
@@ -719,7 +716,7 @@
     <value>Nicht aktualisiert: Die Kopie der App unter „Programme“ läuft gerade für einen anderen Windows-Benutzer auf diesem PC und kann deshalb nicht ersetzt werden. Versuche es erneut, sobald sie dort beendet wurde.</value>
   </data>
   <data name="Games_Status_NotResponding" xml:space="preserve">
-    <value>Läuft – wartet, das Spiel reagiert nicht</value>
+    <value>Läuft – reagiert gerade nicht</value>
   </data>
   <data name="Games_Problem_NotResponding" xml:space="preserve">
     <value>Windows meldet, dass das Spiel nicht reagiert, meist während es lädt. Sein Fenster wird geändert, sobald es wieder reagiert.</value>
@@ -851,7 +848,7 @@
     <value>Meldung über dem Spiel anzeigen</value>
   </data>
   <data name="Hotkeys_ShowMessages_Description" xml:space="preserve">
-    <value>Ein kurzer Hinweis über dem Spiel, wenn ein globaler Hotkey gedrückt wird. Nicht über Spielen im exklusiven Vollbild.</value>
+    <value>Ein kurzer Hinweis über dem Spiel, wenn ein globales Tastenkürzel gedrückt wird. Im exklusiven Vollbild erscheint kein Hinweis.</value>
   </data>
   <data name="Tray_Status_NoFrameOne" xml:space="preserve">
     <value>1 Spiel bereits ohne Rahmen</value>
@@ -869,7 +866,7 @@
     <value>_Details anzeigen…</value>
   </data>
   <data name="Placement_KeepAspectRatio" xml:space="preserve">
-    <value>Form auf schmaleren Bildschirmen beibehalten (Balken oben und unten)</value>
+    <value>Seitenverhältnis auf schmaleren Bildschirmen beibehalten (Balken oben und unten)</value>
   </data>
   <data name="Placement_Warning_DoesNotFit" xml:space="preserve">
     <value>Größer als dieser Bildschirm ({0} × {1}): Das Spielfenster wird passend verkleinert.</value>
@@ -878,10 +875,10 @@
     <value>Ton abspielen</value>
   </data>
   <data name="Hotkeys_PlaySounds_Description" xml:space="preserve">
-    <value>Der Benachrichtigungston, wenn ein globaler Hotkey geklappt hat, der Fehlerton, wenn nicht.</value>
+    <value>Der Benachrichtigungston, wenn ein globales Tastenkürzel geklappt hat, der Fehlerton, wenn nicht.</value>
   </data>
   <data name="Games_MatchConflict" xml:space="preserve">
-    <value>Das laufende Fenster „{0}“ übernimmt stattdessen „{1}“: dessen Filter sind genauer.</value>
+    <value>Das laufende Fenster „{0}“ passt zu mehreren Spielen und gehört zu „{1}“.</value>
   </data>
   <data name="Placement_FitToDisplay" xml:space="preserve">
     <value>An Bildschirm anpassen</value>

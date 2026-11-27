@@ -8,11 +8,12 @@ in `<Version>` of `ForceBorderlessWindowed.csproj`.
 
 ### Changed
 
-- Games tab: the game's name, its status and "Apply to this game" now stay at the top of the details while you scroll. A game that is turned off says "Off" first, before why it isn't running or matched.
+- Games tab: the game's name, its status and the checkbox that turns it on, now called "Make borderless", stay at the top of the details while you scroll. A game that is turned off says "Off" first, before why it isn't running or matched.
 - General tab: "Default window placement" now comes right after Detection.
 - The "Add a game" dialog no longer selects the first running program for you: Add stays disabled until you pick one. After typing a search, the best match is selected, so Enter still adds it.
 - "Remove all" moved into a "⋯" menu next to Remove, as "Remove all games…".
-- Shorter descriptions on the Hotkeys tab. The details of the two "foreground" hotkeys are in their tooltips.
+- Shorter descriptions on the Hotkeys tab. The details of the temporary borderless hotkey are in its tooltip.
+- Clearer wording: the message when another game takes a running window no longer claims its filters are always more specific, the duplicate-game error says which filter to change, and "Keep the shape" is now "Keep the aspect ratio". German texts say "Tastenkürzel" throughout.
 
 ### Fixed
 
