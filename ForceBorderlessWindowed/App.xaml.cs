@@ -149,15 +149,28 @@ public partial class App : Application, IAppShell
     /// <summary>
     /// A newer version was started and asks this one to exit (see SingleInstance). Same as Exit in the tray menu,
     /// so unsaved changes are asked about first. If the user cancels, <paramref name="onDeclined"/> tells the newer
-    /// version to give up, and this one keeps running.
+    /// version to give up, and this one keeps running. Also when the exit fails with an error (e.g. the save before
+    /// it): the newer version would otherwise wait minutes for nothing, with no window.
     /// </summary>
-    public void ExitForNewerVersion(Action onDeclined) => RunOnUiThread(async () =>
+    /// <param name="isNewerVersionWaiting">
+    /// Asked once the user has decided: the newer version gives up after a while, and exiting after that would leave
+    /// no instance running at all. Then this one stays.
+    /// </param>
+    public void ExitForNewerVersion(Action onDeclined, Func<bool> isNewerVersionWaiting) => RunOnUiThread(async () =>
     {
         LogExitForNewerVersion();
-        if (!await RequestExitAsync())
+        var exiting = false;
+        try
         {
-            LogExitForNewerVersionDeclined();
-            onDeclined();
+            exiting = await RequestExitAsync(isNewerVersionWaiting);
+        }
+        finally
+        {
+            if (!exiting)
+            {
+                LogExitForNewerVersionDeclined();
+                onDeclined();
+            }
         }
     });
 
@@ -168,18 +181,19 @@ public partial class App : Application, IAppShell
     /// Like closing the settings window, Exit asks about unsaved changes (Save / Don't save / Cancel) and only
     /// quits if they're saved or discarded. Signing out of Windows still quits without asking: that can't wait.
     /// </summary>
+    /// <param name="stillWanted">Asked after the user's answer, right before exiting: false = stay after all.</param>
     /// <returns>True if the app is exiting; false if it keeps running (cancelled).</returns>
-    private Task<bool> RequestExitAsync()
+    private Task<bool> RequestExitAsync(Func<bool>? stillWanted = null)
     {
         if (_pendingExit is { IsCompleted: false } pending)
         {
             return pending;
         }
 
-        return _pendingExit = ConfirmAndExitAsync();
+        return _pendingExit = ConfirmAndExitAsync(stillWanted);
     }
 
-    private async Task<bool> ConfirmAndExitAsync()
+    private async Task<bool> ConfirmAndExitAsync(Func<bool>? stillWanted)
     {
         if (IsShuttingDown)
         {
@@ -188,6 +202,12 @@ public partial class App : Application, IAppShell
 
         if (_settingsWindow is { } window && !await window.ConfirmExitAsync())
         {
+            return false;
+        }
+
+        if (stillWanted is not null && !stillWanted())
+        {
+            LogNewerVersionGaveUp();
             return false;
         }
 
@@ -444,8 +464,11 @@ public partial class App : Application, IAppShell
     [LoggerMessage(Level = LogLevel.Information, Message = "A newer version was started and asks this one to exit")]
     private partial void LogExitForNewerVersion();
 
-    [LoggerMessage(Level = LogLevel.Information, Message = "Staying: the exit for the newer version was cancelled")]
+    [LoggerMessage(Level = LogLevel.Information, Message = "Staying: the exit for the newer version was cancelled or didn't happen")]
     private partial void LogExitForNewerVersionDeclined();
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "Staying: the newer version stopped waiting before the exit was confirmed")]
+    private partial void LogNewerVersionGaveUp();
 
     [LoggerMessage(Level = LogLevel.Critical, Message = "Startup failed")]
     private partial void LogStartupFailed(Exception ex);

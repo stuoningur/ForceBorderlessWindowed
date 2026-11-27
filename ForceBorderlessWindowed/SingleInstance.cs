@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.IO;
 using System.Security.AccessControl;
 using System.Security.Principal;
 
@@ -40,10 +41,23 @@ internal sealed class SingleInstance : IDisposable
     private const string ExitDeclinedEventName = $@"Local\{Id}-ExitDeclined";
 
     /// <summary>
+    /// Exists while a newer version waits for this one to exit (it holds it open, it is never signaled). The older
+    /// one looks for it right before exiting: if the newer one has given up meanwhile, exiting would leave no
+    /// instance running at all, so it stays (see <see cref="IsNewerVersionWaiting"/>).
+    /// </summary>
+    private const string HandoverWaitingEventName = $@"Local\{Id}-HandoverWaiting";
+
+    /// <summary>
     /// How long a newer version waits for the older one to exit. It may be asking about unsaved changes, so not too
     /// short; but if it hangs, the new one (with no window yet) shouldn't wait invisibly forever.
     /// </summary>
     private static readonly TimeSpan HandoverTimeout = TimeSpan.FromMinutes(2);
+
+    /// <summary>
+    /// After giving up: how long the newer version still waits for an exit already under way. The older one may have
+    /// seen it waiting just before it gave up; its exit (putting the game windows back) takes a few seconds at most.
+    /// </summary>
+    private static readonly TimeSpan HandoverGracePeriod = TimeSpan.FromSeconds(10);
 
     private readonly Mutex _mutex;
     private readonly EventWaitHandle _activateEvent;
@@ -167,20 +181,77 @@ internal sealed class SingleInstance : IDisposable
                     return HandoverResult.Done;   // exited on its own just now
                 }
 
-                olderVersion = version;
-                exitDeclinedEvent.Reset();   // left over from a request nobody waited for anymore
-                PInvoke.AllowSetForegroundWindow((uint)running.ProcessId);   // for its "Save your changes?" question
-                exitEvent.Set();
+                // Without the "still waiting" sign the older one would stay after the user agreed to exit: then
+                // it's brought up instead, as for a version from before the handover
+                var waiting = CreateWaitingEvent();
+                if (waiting is null)
+                {
+                    return HandoverResult.NotNewer;
+                }
 
-                return WaitHandle.WaitAny([processExit, exitDeclinedEvent], HandoverTimeout) == 0
-                    ? HandoverResult.Done
-                    : HandoverResult.Declined;
+                try
+                {
+                    olderVersion = version;
+                    exitDeclinedEvent.Reset();   // left over from a request nobody waited for anymore
+                    PInvoke.AllowSetForegroundWindow((uint)running.ProcessId);   // for its "Save your changes?" question
+                    exitEvent.Set();
+                    switch (WaitHandle.WaitAny([processExit, exitDeclinedEvent], HandoverTimeout))
+                    {
+                        case 0:
+                            return HandoverResult.Done;
+                        case 1:
+                            return HandoverResult.Declined;
+                    }
+                }
+                finally
+                {
+                    waiting.Dispose();   // from now on the older one stays instead of exiting
+                }
+
+                // Timed out: an exit the older one decided on just before can still be under way
+                return processExit.WaitOne(HandoverGracePeriod) ? HandoverResult.Done : HandoverResult.Declined;
             }
         }
         catch (Exception ex) when (ex is UnauthorizedAccessException or WaitHandleCannotBeOpenedException)
         {
             // Not reachable from here (or gone meanwhile): bring it up as usual
             return HandoverResult.NotNewer;
+        }
+    }
+
+    /// <summary>The "still waiting" sign for the older version; null if it couldn't be created.</summary>
+    private static EventWaitHandle? CreateWaitingEvent()
+    {
+        try
+        {
+            using var identity = WindowsIdentity.GetCurrent();
+            return identity.User is { } user ? CreateEvent(HandoverWaitingEventName, user) : null;
+        }
+        catch (Exception ex) when (ex is UnauthorizedAccessException or IOException or WaitHandleCannotBeOpenedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// For the older version, right before it exits for a newer one: true if that one is still waiting to take over.
+    /// When unsure (it exists, but can't be opened from here), true: exiting is what was asked for.
+    /// </summary>
+    public static bool IsNewerVersionWaiting()
+    {
+        try
+        {
+            if (!EventWaitHandle.TryOpenExisting(HandoverWaitingEventName, out var waiting))
+            {
+                return false;
+            }
+
+            waiting.Dispose();
+            return true;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return true;
         }
     }
 

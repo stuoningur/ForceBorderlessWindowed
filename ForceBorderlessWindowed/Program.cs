@@ -73,7 +73,8 @@ internal static class Program
 
             // Called on thread-pool threads; the App methods move themselves to the UI thread
             instance.ListenForActivation(app.ShowSettingsWindow);
-            instance.ListenForExitRequest(() => app.ExitForNewerVersion(instance.DeclineExit));
+            instance.ListenForExitRequest(() =>
+                app.ExitForNewerVersion(instance.DeclineExit, SingleInstance.IsNewerVersionWaiting));
 
             exitCode = app.Run();
             restart = app.RestartRequested;
