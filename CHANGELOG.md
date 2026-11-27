@@ -4,13 +4,26 @@ Every release gets a section here before its tag is pushed: the release workflow
 and stops if the section is missing. Newest first; the heading is `## [version] - date`, with the version exactly as
 in `<Version>` of `ForceBorderlessWindowed.csproj`.
 
-## [Unreleased]
+## [0.10.1-beta] - 2026-11-27
 
 ### Changed
 
 - More useful logs: when a window can't be changed or restored, the log names the Windows function that refused and its error code. Each start records the Windows version, whether the app runs as administrator and whether it started at sign-in. Lines show the time zone and a shorter source name, and "made borderless" lines give the exact position and display.
 - If the app fails while starting, before its log is set up, it now shows a message and writes a `crash-....txt` file to the log folder instead of closing silently.
 - The error message no longer says details are in the log file when no log file could be written.
+- If the Pause or "add the game in the foreground" hotkey can't save the settings, you now hear the failure sound and see a message over the game instead of an error dialog that takes the focus from the game.
+- Switching from a game to the settings window releases the mouse lock, the hidden taskbar and the black background right away.
+- Windows made borderless with the one-off hotkey are noticed right away when they put their frame back, like game windows.
+
+### Fixed
+
+- Games and programs whose main window belongs to a hidden helper window (some older engines and Delphi programs) can now be found as games and used with the hotkeys.
+- Updating while the old version asks "Save your changes?": if the new version stopped waiting before you answered, the old one now stays open instead of exiting and leaving neither running. This takes effect for updates from this version on.
+- A power cut right after saving could leave an empty settings file, and the next start used the defaults.
+- A failure while the app starts watching for game windows now shows the error message instead of closing the app silently.
+- Unplugging a monitor while the settings window is open no longer shows an error message.
+- With a renamed exe, starting it again now brings up the window of the "Start with Windows" (as administrator) copy.
+- Games installed in folders with very long paths (over 1024 characters) are now recognized.
 
 ## [0.10.0-beta] - 2026-11-27
 
