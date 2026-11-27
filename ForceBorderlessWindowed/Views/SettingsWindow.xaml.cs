@@ -460,7 +460,6 @@ public partial class SettingsWindow : Window
         }
     }
 
-    /// <summary>Switches to the tab (and game) of a field and puts the focus into it: an invalid one, or one to fill in.</summary>
     /// <summary>The Games tab with this game selected (from the tray's "Show details…"). Unknown IDs just show the tab.</summary>
     public void ShowGame(Guid gameId)
     {
@@ -471,6 +470,7 @@ public partial class SettingsWindow : Window
         }
     }
 
+    /// <summary>Switches to the tab (and game) of a field and puts the focus into it: an invalid one, or one to fill in.</summary>
     private void GoToField(InputErrorLocation error)
     {
         // The focus goes to the field below, not to the tab header (see OnTabSelectionChanged)

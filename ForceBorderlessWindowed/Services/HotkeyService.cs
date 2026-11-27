@@ -1,9 +1,8 @@
+using System.Globalization;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Windows.Input;
 using System.Windows.Interop;
-
-using System.Globalization;
 
 using ForceBorderlessWindowed.Models;
 using ForceBorderlessWindowed.Resources;

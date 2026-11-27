@@ -8,13 +8,13 @@ using Microsoft.Extensions.Logging;
 
 namespace ForceBorderlessWindowed.Services;
 
-
-
 internal sealed partial class SettingsService : ISettingsService
 {
     private readonly ILogger<SettingsService> _logger;
     private readonly string _filePath;
+
     public string? ActiveLanguage { get; }
+
     public SettingsService(ILogger<SettingsService> logger)
         : this(logger, Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "ForceBorderlessWindowed"))
     {

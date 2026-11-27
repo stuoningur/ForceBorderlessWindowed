@@ -13,7 +13,6 @@ using ForceBorderlessWindowed.Services;
 
 namespace ForceBorderlessWindowed.ViewModels;
 
-/// <summary>An entry in the "Add" menu.</summary>
 /// <summary>A running program as the "Add a game" dialog lists it.</summary>
 /// <param name="UsedBy">The game in the list that takes its window (see GameMatcher), or null: it can be added.</param>
 /// <param name="DisplayLabel">The display its window is on, e.g. "Display 2: DELL U2723QE"; null with only one display.</param>
