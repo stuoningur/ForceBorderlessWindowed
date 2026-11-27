@@ -413,16 +413,20 @@ internal sealed partial class WindowTracker(
         // Windows of games that were disabled or removed since we changed them, or whose filters (exe file, window
         // title) don't take the window anymore. Asked of each window instead of looking up its game by ID: a window
         // taken over from the last run doesn't know its game yet, and another game may take it now.
+        // Looked up once per window: each lookup opens the game's process for its exe path.
         var games = GetEnabledGames(current);
+        var gameOf = new Dictionary<nint, GameProfile?>();
         foreach (var tracked in _tracked.Values)
         {
-            if (FindGame(games, tracked.Handle, tracked.ProcessId) is { } game)
+            var game = FindGame(games, tracked.Handle, tracked.ProcessId);
+            gameOf[tracked.Handle] = game;
+            if (game is not null)
             {
                 tracked.ProfileId = game.Id;
             }
         }
 
-        RestoreWhere(t => !_oneOff.ContainsKey(t.Handle) && FindGame(games, t.Handle, t.ProcessId) is null, "game disabled or removed");
+        RestoreWhere(t => !_oneOff.ContainsKey(t.Handle) && gameOf.GetValueOrDefault(t.Handle) is null, "game disabled or removed");
         foreach (var (handle, _) in _ignored.Where(pair => !games.ById.ContainsKey(pair.Value.ProfileId)).ToList())
         {
             _ignored.Remove(handle);
