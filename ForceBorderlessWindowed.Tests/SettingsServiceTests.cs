@@ -4,6 +4,7 @@ using System.Windows.Input;
 using ForceBorderlessWindowed.Models;
 using ForceBorderlessWindowed.Services;
 
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Abstractions;
 
 namespace ForceBorderlessWindowed.Tests;
@@ -210,24 +211,37 @@ public sealed class SettingsServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task FileLockedForAMoment_IsReadAfterAll()
+    public void FileLockedForAMoment_IsReadAfterAll()
     {
         var path = Path.Combine(_folder, "settings.json");
         File.WriteAllText(path, """{ "games": [ { "executableName": "game.exe" } ] }""");
 
-        var cancel = TestContext.Current.CancellationToken;
+        // Released when the service says it tries again, not after a fixed delay: a timer on a busy test machine
+        // could fire after the last attempt
         var locked = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.None);
-        var release = Task.Run(async () =>
+        var retries = 0;
+        var logger = new CallbackLogger<SettingsService>(() =>
         {
-            await Task.Delay(300, cancel);
-            await locked.DisposeAsync();
-        }, cancel);
+            retries++;
+            locked.Dispose();
+        });
 
-        var service = Load();
-        await release;
+        var service = new SettingsService(logger, _folder);
 
+        Assert.Equal(1, retries);   // locked once, read on the next attempt
         Assert.Null(service.LoadProblem);
         Assert.Single(service.Current.Games);
+    }
+
+    /// <summary>Calls back on every log entry.</summary>
+    private sealed class CallbackLogger<T>(Action onLog) : ILogger<T>
+    {
+        public IDisposable? BeginScope<TState>(TState state) where TState : notnull => null;
+
+        public bool IsEnabled(LogLevel logLevel) => true;
+
+        public void Log<TState>(LogLevel logLevel, EventId eventId, TState state, Exception? exception,
+            Func<TState, Exception?, string> formatter) => onLog();
     }
 
     [Fact]
