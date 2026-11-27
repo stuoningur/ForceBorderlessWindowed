@@ -62,7 +62,7 @@ internal sealed partial class WindowTracker(
     private EnabledGames _games = new([], [], new(StringComparer.OrdinalIgnoreCase));
 
     /// <param name="ById">For looking up the game of a window found earlier.</param>
-    /// <param name="InOrder">In list order: among equally specific games the first one wins, see GameMatcher.</param>
+    /// <param name="InOrder">In list order (which game wins a window doesn't depend on it, see GameMatcher).</param>
     /// <param name="ByExe">For the cheap event filter and for matching one window, see <see cref="FindGame"/>.</param>
     private sealed record EnabledGames(
         Dictionary<Guid, GameProfile> ById, List<GameProfile> InOrder, Dictionary<string, List<GameProfile>> ByExe);

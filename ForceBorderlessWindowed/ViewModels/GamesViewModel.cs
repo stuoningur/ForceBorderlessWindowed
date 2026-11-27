@@ -300,6 +300,8 @@ public partial class GamesViewModel : ObservableObject
             profile.Placement.GameMonitor = profile.IsRunning && gameMonitors.TryGetValue(profile, out var monitor) ? monitor : null;
         }
 
+        UpdateMatchConflicts();
+
         IReadOnlyList<RunningProgramItem> items = [.. programs.Select((p, i) => new RunningProgramItem(
             p, IsConfigured(p), icons[i]))];
 
@@ -534,8 +536,45 @@ public partial class GamesViewModel : ObservableObject
         OnChanged();
     }
 
+    /// <summary>
+    /// For each game: a running window it takes, but that goes to another game (see GameMatcher.FindBest), as the
+    /// watcher would decide after Save. Only enabled games count, like in the watcher. A game that wins at least one
+    /// of its windows has no conflict. Cheap: a handful of games and running windows.
+    /// </summary>
+    private void UpdateMatchConflicts()
+    {
+        var candidates = Profiles
+            .Where(p => p.Enabled && !string.IsNullOrWhiteSpace(p.ExecutableName))
+            .Select(p => (Profile: p, Settings: p.ToProfile()))
+            .ToList();
+
+        foreach (var profile in Profiles)
+        {
+            string? conflict = null;
+            if (profile.Enabled)
+            {
+                foreach (var program in _runningPrograms.Where(profile.Matches))
+                {
+                    var winner = GameMatcher.FindBest(candidates.Select(c => c.Settings),
+                        program.ExecutableName, program.ExecutablePath, () => program.WindowTitle);
+                    if (winner is null || winner.Id == profile.Id)
+                    {
+                        conflict = null;
+                        break;
+                    }
+
+                    conflict ??= string.Format(CultureInfo.CurrentCulture, Formats.Games_MatchConflict,
+                        program.WindowTitle, candidates.First(c => c.Settings.Id == winner.Id).Profile.Title);
+                }
+            }
+
+            profile.MatchConflictText = conflict;
+        }
+    }
+
     private void OnChanged()
     {
+        UpdateMatchConflicts();
         RefreshValidation();
         Changed?.Invoke(this, EventArgs.Empty);
     }

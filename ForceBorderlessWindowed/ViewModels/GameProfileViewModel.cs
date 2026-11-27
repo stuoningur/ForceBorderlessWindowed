@@ -95,6 +95,13 @@ public partial class GameProfileViewModel : ObservableObject
     [NotifyPropertyChangedFor(nameof(NotRunningText), nameof(AccessibleName))]
     public partial string? CurrentWindowTitle { get; set; }
 
+    /// <summary>
+    /// A running window this game takes, but another game with more specific filters wins it (see GameMatcher), so
+    /// the watcher leaves it to that one: says so below the title filter. null = no such conflict. Not saved.
+    /// </summary>
+    [ObservableProperty]
+    public partial string? MatchConflictText { get; set; }
+
     [RelayCommand(CanExecute = nameof(CanUseCurrentTitle))]
     private void UseCurrentTitle() => WindowTitleContains = CurrentWindowTitle;
 

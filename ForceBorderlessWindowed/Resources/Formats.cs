@@ -21,6 +21,9 @@ internal static class Formats
     public static CompositeFormat Games_Accessible_TitleFilter =>
         field ??= CompositeFormat.Parse(Strings.Games_Accessible_TitleFilter);
 
+    public static CompositeFormat Games_MatchConflict =>
+        field ??= CompositeFormat.Parse(Strings.Games_MatchConflict);
+
     public static CompositeFormat Placement_Summary_Automatic =>
         field ??= CompositeFormat.Parse(Strings.Placement_Summary_Automatic);
 

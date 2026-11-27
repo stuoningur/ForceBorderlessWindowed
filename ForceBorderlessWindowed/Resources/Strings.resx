@@ -892,4 +892,7 @@
   <data name="Hotkeys_PlaySounds_Description" xml:space="preserve">
     <value>When a global hotkey is pressed: the Windows notification sound if it worked, the error sound if it wasn’t possible. Uses your Windows sound settings.</value>
   </data>
+  <data name="Games_MatchConflict" xml:space="preserve">
+    <value>The running window “{0}” goes to “{1}” instead: its filters are more specific.</value>
+  </data>
 </root>

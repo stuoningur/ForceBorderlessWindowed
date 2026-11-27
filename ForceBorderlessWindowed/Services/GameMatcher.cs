@@ -42,7 +42,8 @@ internal static class GameMatcher
 
     /// <summary>
     /// The most specific profile that takes the program, or null. An exact exe file counts more than a window title,
-    /// and both more than the exe name alone; among equally specific ones the first in the list wins.
+    /// and both more than the exe name alone. Among equally specific ones the longer title filter wins, and after that
+    /// the lower <see cref="GameProfile.Id"/>: never the list position, which changes with a rename (the list is A–Z).
     /// </summary>
     /// <param name="programTitle">
     /// Read only when a candidate has a title filter: asking a window for its title costs a little.
@@ -51,7 +52,6 @@ internal static class GameMatcher
         IEnumerable<GameProfile> games, string programExe, string? programPath, Func<string?> programTitle)
     {
         GameProfile? best = null;
-        var bestScore = -1;
         string? title = null;
         var titleRead = false;
 
@@ -63,15 +63,27 @@ internal static class GameMatcher
                 titleRead = true;
             }
 
-            var score = Specificity(game);
-            if (score > bestScore && Matches(game, programExe, programPath, title))
+            if ((best is null || Beats(game, best)) && Matches(game, programExe, programPath, title))
             {
                 best = game;
-                bestScore = score;
             }
         }
 
         return best;
+    }
+
+    /// <summary>Whether <paramref name="game"/> wins over <paramref name="other"/> when both take a window, see FindBest.</summary>
+    private static bool Beats(GameProfile game, GameProfile other)
+    {
+        var bySpecificity = Specificity(game).CompareTo(Specificity(other));
+        if (bySpecificity != 0)
+        {
+            return bySpecificity > 0;
+        }
+
+        var byTitleLength = (NormalizeTitle(game.WindowTitleContains)?.Length ?? 0)
+            .CompareTo(NormalizeTitle(other.WindowTitleContains)?.Length ?? 0);
+        return byTitleLength != 0 ? byTitleLength > 0 : game.Id.CompareTo(other.Id) < 0;
     }
 
     /// <summary>The path a profile insists on: only with the box ticked and a path that belongs to the exe name.</summary>

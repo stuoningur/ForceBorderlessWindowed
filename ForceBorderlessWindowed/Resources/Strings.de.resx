@@ -887,4 +887,7 @@
   <data name="Hotkeys_PlaySounds_Description" xml:space="preserve">
     <value>Wenn ein globaler Hotkey gedrückt wird: der Windows-Benachrichtigungston, wenn es geklappt hat, der Fehlerton, wenn es nicht ging. Verwendet deine Windows-Soundeinstellungen.</value>
   </data>
+  <data name="Games_MatchConflict" xml:space="preserve">
+    <value>Das laufende Fenster „{0}“ übernimmt stattdessen „{1}“: dessen Filter sind genauer.</value>
+  </data>
 </root>

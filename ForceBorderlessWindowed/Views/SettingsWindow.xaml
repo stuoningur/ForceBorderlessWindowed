@@ -591,6 +591,9 @@
                                                     </Grid>
                                                     <TextBlock Style="{StaticResource SecondaryTextStyle}" Margin="0,4,0,0" TextWrapping="Wrap"
                                                                Text="{x:Static res:Strings.Games_WindowTitleContains_Hint}" />
+                                                    <!-- Another game wins this game's running window (more specific filters) -->
+                                                    <controls:FieldError IsWarning="True" Text="{Binding MatchConflictText}"
+                                                                         Target="{Binding ElementName=WindowTitleBox}" />
 
                                                     <CheckBox Margin="0,12,0,0"
                                                               Content="{x:Static res:Strings.Games_Enabled}"
