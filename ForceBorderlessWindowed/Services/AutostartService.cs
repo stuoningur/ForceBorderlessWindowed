@@ -161,7 +161,7 @@ internal sealed partial class AutostartService : IAutostartService
     private static string RunKeyCommand => $"\"{ExePath}\" {StartedAtSignInArgument}";
 
     /// <summary>The exe path of a command line: the quoted part, or everything up to the first space.</summary>
-    private static string GetCommandPath(string command)
+    internal static string GetCommandPath(string command)
     {
         command = command.Trim();
         if (command.StartsWith('"'))
@@ -238,10 +238,15 @@ internal sealed partial class AutostartService : IAutostartService
     private static bool IsDisabledInTaskManager()
     {
         using var key = Registry.CurrentUser.OpenSubKey(StartupApprovedKeyPath);
-
-        // First byte of the binary value: even (0x02, 0x06) = enabled, odd (0x03, 0x07) = disabled
-        return key?.GetValue(ValueName) is byte[] { Length: > 0 } data && (data[0] & 1) == 1;
+        return IsDisabledFlag(key?.GetValue(ValueName));
     }
+
+    /// <summary>
+    /// Task Manager's StartupApproved value: binary, first byte even (0x02, 0x06) = enabled, odd (0x03, 0x07) =
+    /// disabled. Missing or anything else = not disabled.
+    /// </summary>
+    internal static bool IsDisabledFlag(object? value) =>
+        value is byte[] { Length: > 0 } data && (data[0] & 1) == 1;
 
     // ---------- Task Scheduler (Elevated) ----------
 
