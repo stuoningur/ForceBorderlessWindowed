@@ -6,7 +6,8 @@
 -->
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-                    xmlns:controls="clr-namespace:ForceBorderlessWindowed.Controls">
+                    xmlns:controls="clr-namespace:ForceBorderlessWindowed.Controls"
+                    xmlns:views="clr-namespace:ForceBorderlessWindowed.Views">
 
     <BooleanToVisibilityConverter x:Key="BoolToVisibility" />
 
@@ -344,19 +345,26 @@
                                        Style="{StaticResource IconTextStyle}"
                                        Text="{TemplateBinding Glyph}" />
 
+                            <!-- While recording, the alternate description replaces the description. The hidden copy in the same
+                                 cell reserves the room the alternate needs (header + alternate), so the rows below don't jump, and
+                                 the visible text stays centered in that room instead of sitting at its top when the alternate is
+                                 longer (narrow window). Plain header text in the copy: an AccessText there would register the key twice. -->
+                            <StackPanel x:Name="AlternateSizer" Grid.Column="1" Margin="0,0,16,0" VerticalAlignment="Center"
+                                        Visibility="Hidden" IsHitTestVisible="False">
+                                <TextBlock FontSize="14" TextWrapping="Wrap"
+                                           Text="{Binding Header, RelativeSource={RelativeSource TemplatedParent}, Converter={x:Static views:AccessKeyConverter.Instance}}" />
+                                <TextBlock FontSize="12" TextWrapping="Wrap" Text="{TemplateBinding AlternateDescription}" />
+                            </StackPanel>
                             <StackPanel Grid.Column="1" Margin="0,0,16,0" VerticalAlignment="Center">
                                 <controls:FieldLabel x:Name="HeaderLabel"
                                                      Content="{TemplateBinding Header}"
                                                      Target="{Binding Content, RelativeSource={RelativeSource TemplatedParent}}" />
-                                <!-- Description and its alternate in one cell: the hidden one still takes its room -->
-                                <Grid>
-                                    <TextBlock x:Name="DescriptionText" FontSize="12" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                               Text="{TemplateBinding Description}" />
-                                    <TextBlock x:Name="AlternateDescriptionText" FontSize="12" TextWrapping="Wrap"
-                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
-                                               Text="{TemplateBinding AlternateDescription}" Visibility="Hidden" />
-                                </Grid>
+                                <TextBlock x:Name="DescriptionText" FontSize="12" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Text="{TemplateBinding Description}" />
+                                <TextBlock x:Name="AlternateDescriptionText" FontSize="12" TextWrapping="Wrap"
+                                           Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                           Text="{TemplateBinding AlternateDescription}" Visibility="Collapsed" />
                             </StackPanel>
 
                             <ContentPresenter Grid.Column="2" VerticalAlignment="Center" />
@@ -370,10 +378,10 @@
                             <Setter TargetName="DescriptionText" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="AlternateDescription" Value="{x:Null}">
-                            <Setter TargetName="AlternateDescriptionText" Property="Visibility" Value="Collapsed" />
+                            <Setter TargetName="AlternateSizer" Property="Visibility" Value="Collapsed" />
                         </Trigger>
                         <Trigger Property="IsAlternateDescriptionShown" Value="True">
-                            <Setter TargetName="DescriptionText" Property="Visibility" Value="Hidden" />
+                            <Setter TargetName="DescriptionText" Property="Visibility" Value="Collapsed" />
                             <Setter TargetName="AlternateDescriptionText" Property="Visibility" Value="Visible" />
                         </Trigger>
                         <MultiTrigger>

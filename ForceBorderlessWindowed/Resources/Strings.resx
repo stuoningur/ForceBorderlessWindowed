@@ -217,7 +217,10 @@
     <value>Add the game in the foreground</value>
   </data>
   <data name="Hotkeys_AddForegroundGame_Description" xml:space="preserve">
-    <value>Adds the program you're using to the games and makes it borderless right away, unless detection is paused. A sound tells you whether it was added.</value>
+    <value>Adds the program you're using to the games and makes it borderless.</value>
+  </data>
+  <data name="Hotkeys_AddForegroundGame_Details" xml:space="preserve">
+    <value>While detection is paused, it’s only added, not made borderless.</value>
   </data>
   <data name="Hotkeys_Save" xml:space="preserve">
     <value>Save settings</value>
@@ -269,7 +272,7 @@
     <value>Many programs use this combination themselves. As a global hotkey, it no longer reaches any of them.</value>
   </data>
   <data name="Hotkeys_Section_Global_Limits" xml:space="preserve">
-    <value>Only hotkeys that other programs register with Windows can be checked. A game's own key bindings and tools that read the keyboard directly (some macro tools and overlays) aren't detected. While a hotkey is set here, the program in the foreground usually no longer receives that combination.</value>
+    <value>Only hotkeys that other programs register with Windows can be checked, not a game’s own key bindings or macro tools and overlays. The program in the foreground usually no longer receives a combination set here.</value>
   </data>
   <data name="Error_Unexpected_Message" xml:space="preserve">
     <value>An unexpected error occurred. Details have been written to the log file.</value>
@@ -753,7 +756,10 @@
     <value>Make the window in the foreground borderless</value>
   </data>
   <data name="Hotkeys_ApplyToForeground_Description" xml:space="preserve">
-    <value>Temporary: makes the window you’re using borderless with the default placement. Nothing is saved and the program isn’t added to the games. It lasts until the window closes, detection is paused or the app exits; press again to put the window back right away. A sound tells you whether it worked.</value>
+    <value>Temporary, nothing is saved: makes the window you’re using borderless with the default placement. Press again to undo.</value>
+  </data>
+  <data name="Hotkeys_ApplyToForeground_Details" xml:space="preserve">
+    <value>The program isn’t added to the games. The window stays borderless until it closes, detection is paused or the app exits.</value>
   </data>
   <data name="Games_BlackBackground" xml:space="preserve">
     <value>Black background</value>
@@ -849,7 +855,7 @@
     <value>Show a message over the game</value>
   </data>
   <data name="Hotkeys_ShowMessages_Description" xml:space="preserve">
-    <value>When a global hotkey is pressed: a short note over the game. Not shown over games in exclusive fullscreen.</value>
+    <value>A short note over the game when a global hotkey is pressed. Not over games in exclusive fullscreen.</value>
   </data>
   <data name="Tray_Status_NoFrameOne" xml:space="preserve">
     <value>1 game already without frame</value>
@@ -876,7 +882,7 @@
     <value>Play a sound</value>
   </data>
   <data name="Hotkeys_PlaySounds_Description" xml:space="preserve">
-    <value>When a global hotkey is pressed: the Windows notification sound if it worked, the error sound if it wasn’t possible. Uses your Windows sound settings.</value>
+    <value>The notification sound when a global hotkey worked, the error sound when it didn’t.</value>
   </data>
   <data name="Games_MatchConflict" xml:space="preserve">
     <value>The running window “{0}” goes to “{1}” instead: its filters are more specific.</value>
@@ -996,7 +1002,10 @@
     <value>_Reset</value>
   </data>
   <data name="Games_RemoveAll" xml:space="preserve">
-    <value>Remove all</value>
+    <value>Remove all games…</value>
+  </data>
+  <data name="Games_MoreActions" xml:space="preserve">
+    <value>More actions</value>
   </data>
   <data name="Games_RemoveAll_Confirm_Title" xml:space="preserve">
     <value>Remove all games?</value>

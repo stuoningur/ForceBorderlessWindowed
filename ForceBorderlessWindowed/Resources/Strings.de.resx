@@ -216,7 +216,10 @@
     <value>Spiel im Vordergrund hinzufügen</value>
   </data>
   <data name="Hotkeys_AddForegroundGame_Description" xml:space="preserve">
-    <value>Fügt das Programm, das du gerade verwendest, zu den Spielen hinzu und macht es sofort randlos, außer die Erkennung ist pausiert. Ein Ton sagt dir, ob es hinzugefügt wurde.</value>
+    <value>Fügt das Programm, das du gerade verwendest, zu den Spielen hinzu und macht es randlos.</value>
+  </data>
+  <data name="Hotkeys_AddForegroundGame_Details" xml:space="preserve">
+    <value>Während die Erkennung pausiert ist, wird es nur hinzugefügt, nicht randlos gemacht.</value>
   </data>
   <data name="Hotkeys_Save" xml:space="preserve">
     <value>Einstellungen speichern</value>
@@ -268,7 +271,7 @@
     <value>Viele Programme verwenden diese Kombination selbst. Als globales Tastenkürzel kommt sie bei keinem davon mehr an.</value>
   </data>
   <data name="Hotkeys_Section_Global_Limits" xml:space="preserve">
-    <value>Geprüft werden können nur Tastenkürzel, die andere Programme bei Windows anmelden. Die Tastenbelegung eines Spiels und Tools, die die Tastatur direkt lesen (manche Makro-Tools und Overlays), werden nicht erkannt. Solange hier ein Tastenkürzel festgelegt ist, erhält das Programm im Vordergrund diese Kombination meist nicht mehr.</value>
+    <value>Geprüft werden können nur Tastenkürzel, die andere Programme bei Windows anmelden, nicht die Tastenbelegung eines Spiels oder Makro-Tools und Overlays. Das Programm im Vordergrund erhält eine hier festgelegte Kombination meist nicht mehr.</value>
   </data>
   <data name="Error_Unexpected_Message" xml:space="preserve">
     <value>Ein unerwarteter Fehler ist aufgetreten. Details wurden in die Logdatei geschrieben.</value>
@@ -749,7 +752,10 @@
     <value>Fenster im Vordergrund randlos machen</value>
   </data>
   <data name="Hotkeys_ApplyToForeground_Description" xml:space="preserve">
-    <value>Vorübergehend: macht das Fenster, das du gerade benutzt, mit der Standardplatzierung randlos. Nichts wird gespeichert und das Programm wird nicht zu den Spielen hinzugefügt. Das gilt, bis das Fenster geschlossen, die Erkennung pausiert oder die App beendet wird; nochmal drücken stellt das Fenster sofort wieder her. Ein Ton sagt dir, ob es geklappt hat.</value>
+    <value>Vorübergehend, ohne Speichern: macht das Fenster, das du gerade benutzt, mit der Standardplatzierung randlos. Nochmal drücken macht es rückgängig.</value>
+  </data>
+  <data name="Hotkeys_ApplyToForeground_Details" xml:space="preserve">
+    <value>Das Programm wird nicht zu den Spielen hinzugefügt. Das Fenster bleibt randlos, bis es geschlossen, die Erkennung pausiert oder die App beendet wird.</value>
   </data>
   <data name="Games_BlackBackground" xml:space="preserve">
     <value>Schwarzer Hintergrund</value>
@@ -845,7 +851,7 @@
     <value>Meldung über dem Spiel anzeigen</value>
   </data>
   <data name="Hotkeys_ShowMessages_Description" xml:space="preserve">
-    <value>Wenn ein globaler Hotkey gedrückt wird: ein kurzer Hinweis über dem Spiel. Nicht über Spielen im exklusiven Vollbild.</value>
+    <value>Ein kurzer Hinweis über dem Spiel, wenn ein globaler Hotkey gedrückt wird. Nicht über Spielen im exklusiven Vollbild.</value>
   </data>
   <data name="Tray_Status_NoFrameOne" xml:space="preserve">
     <value>1 Spiel bereits ohne Rahmen</value>
@@ -872,7 +878,7 @@
     <value>Ton abspielen</value>
   </data>
   <data name="Hotkeys_PlaySounds_Description" xml:space="preserve">
-    <value>Wenn ein globaler Hotkey gedrückt wird: der Windows-Benachrichtigungston, wenn es geklappt hat, der Fehlerton, wenn es nicht ging. Verwendet deine Windows-Soundeinstellungen.</value>
+    <value>Der Benachrichtigungston, wenn ein globaler Hotkey geklappt hat, der Fehlerton, wenn nicht.</value>
   </data>
   <data name="Games_MatchConflict" xml:space="preserve">
     <value>Das laufende Fenster „{0}“ übernimmt stattdessen „{1}“: dessen Filter sind genauer.</value>
@@ -992,7 +998,10 @@
     <value>_Zurücksetzen</value>
   </data>
   <data name="Games_RemoveAll" xml:space="preserve">
-    <value>Alle entfernen</value>
+    <value>Alle Spiele entfernen…</value>
+  </data>
+  <data name="Games_MoreActions" xml:space="preserve">
+    <value>Weitere Aktionen</value>
   </data>
   <data name="Games_RemoveAll_Confirm_Title" xml:space="preserve">
     <value>Alle Spiele entfernen?</value>

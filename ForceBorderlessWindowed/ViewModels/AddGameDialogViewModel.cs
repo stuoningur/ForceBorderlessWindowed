@@ -65,11 +65,11 @@ public sealed partial class AddGameDialogViewModel : ObservableObject, IDisposab
             || item.Program.WindowTitle.Contains(search, StringComparison.CurrentCultureIgnoreCase)
             || item.Program.ExecutableName.Contains(search, StringComparison.CurrentCultureIgnoreCase))];
 
-        // The same program stays selected across refreshes (a new item object each time); otherwise the first one
-        // that can be added, so Enter right after typing adds the best match
+        // The same program stays selected across refreshes (a new item object each time). Nothing is picked for the
+        // user on open: Add only gets enabled by a choice. After typing a search, the first match that can be added
+        // is selected, so Enter right after typing adds the best match of what the user asked for.
         SelectedItem = Items.FirstOrDefault(i => i.Program.ProcessId == selectedProcess)
-            ?? Items.FirstOrDefault(i => !i.IsAlreadyAdded)
-            ?? (Items.Count > 0 ? Items[0] : null);
+            ?? (search.Length == 0 ? null : Items.FirstOrDefault(i => !i.IsAlreadyAdded) ?? (Items.Count > 0 ? Items[0] : null));
     }
 
     public void Dispose() => _games.PropertyChanged -= OnGamesChanged;

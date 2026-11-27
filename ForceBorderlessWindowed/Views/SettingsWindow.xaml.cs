@@ -360,6 +360,17 @@ public partial class SettingsWindow : Window
     }
 
     /// <summary>Asks, then empties the games list (applied with Save, like Remove).</summary>
+    /// <summary>The "⋯" button under the games list opens its menu (Remove all), like the placement presets.</summary>
+    private void OnMoreActionsClick(object sender, RoutedEventArgs e)
+    {
+        if (MoreActionsButton.ContextMenu is { } menu)
+        {
+            menu.PlacementTarget = MoreActionsButton;
+            menu.Placement = System.Windows.Controls.Primitives.PlacementMode.Bottom;
+            menu.IsOpen = true;
+        }
+    }
+
     private void OnRemoveAllGamesClick(object sender, RoutedEventArgs e)
     {
         if (MessageDialog.Show(this, Strings.Games_RemoveAll_Confirm_Title, Strings.Games_RemoveAll_Confirm_Message,

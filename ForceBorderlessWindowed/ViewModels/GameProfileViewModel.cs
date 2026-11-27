@@ -56,7 +56,7 @@ public partial class GameProfileViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AccessibleName), nameof(ListOffText), nameof(HasListSubtitle), nameof(StatusText),
-        nameof(ShowStatusBadge))]
+        nameof(ShowStatusBadge), nameof(HeaderStatusText))]
     public partial bool Enabled { get; set; }
 
     /// <summary>Full exe path for the icon and for <see cref="MatchExecutablePath"/>, see <see cref="GameProfile.ExecutablePath"/>.</summary>
@@ -82,7 +82,7 @@ public partial class GameProfileViewModel : ObservableObject
     /// <summary>"Window title contains", see <see cref="GameProfile.WindowTitleContains"/>. Empty = any window.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(AccessibleName), nameof(ListSubtitle), nameof(HasListSubtitle), nameof(ListOffText),
-        nameof(NotRunningText))]
+        nameof(NotRunningText), nameof(HeaderStatusText))]
     public partial string? WindowTitleContains { get; set; }
 
     /// <summary>
@@ -92,7 +92,7 @@ public partial class GameProfileViewModel : ObservableObject
     /// </summary>
     [ObservableProperty]
     [NotifyCanExecuteChangedFor(nameof(UseCurrentTitleCommand))]
-    [NotifyPropertyChangedFor(nameof(NotRunningText), nameof(AccessibleName))]
+    [NotifyPropertyChangedFor(nameof(NotRunningText), nameof(HeaderStatusText), nameof(AccessibleName))]
     public partial string? CurrentWindowTitle { get; set; }
 
     /// <summary>
@@ -144,7 +144,7 @@ public partial class GameProfileViewModel : ObservableObject
     /// <summary>Runtime status for the list marker, not saved.</summary>
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(StatusText), nameof(ProblemText), nameof(HasProblem), nameof(CanRestartAsAdmin),
-        nameof(StatusSeverity), nameof(AccessibleName), nameof(ShowStatusBadge), nameof(NotRunningText))]
+        nameof(StatusSeverity), nameof(AccessibleName), nameof(ShowStatusBadge), nameof(NotRunningText), nameof(HeaderStatusText))]
     public partial bool IsRunning { get; set; }
 
     /// <summary>What the watcher did with the window; null = nothing to report (yet). Not saved.</summary>
@@ -245,6 +245,16 @@ public partial class GameProfileViewModel : ObservableObject
         !IsRunning && CurrentWindowTitle is not null && TitleFilter is not null
             ? Strings.Games_Status_NoMatchingTitle
             : Strings.Games_Status_NotRunning;
+
+    /// <summary>
+    /// Status line under the name in the pinned details header while the game isn't running (the status bar takes
+    /// over while it runs). "Off" comes first for games that aren't applied: a title mismatch alone read as if the
+    /// game were waiting to be made borderless.
+    /// </summary>
+    public string? HeaderStatusText =>
+        IsRunning ? null
+        : Enabled ? NotRunningText
+        : $"{Strings.Games_Status_Disabled} · {NotRunningText}";
 
     internal string? TitleFilter => GameMatcher.NormalizeTitle(WindowTitleContains);
 

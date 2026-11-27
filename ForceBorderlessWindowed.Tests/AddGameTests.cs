@@ -118,11 +118,27 @@ public class AddGameTests
     }
 
     [Fact]
-    public async Task Dialog_OnlyAddedPrograms_SelectsOne_ButCannotAdd()
+    public async Task Dialog_OpensWithNothingSelected_SoAddWaitsForAChoice()
+    {
+        var desktop = DesktopWith(Program(1, "discord.exe", "Discord"), Program(2, "game.exe", "Game"));
+        var games = await GamesWith(desktop);
+        using var dialog = new AddGameDialogViewModel(games);
+
+        Assert.Null(dialog.SelectedItem);
+        Assert.False(dialog.CanAdd);
+
+        dialog.SelectedItem = dialog.Items.Single(i => i.Program.ProcessId == 2);
+        Assert.True(dialog.CanAdd);
+    }
+
+    [Fact]
+    public async Task Dialog_SearchMatchingOnlyAddedPrograms_SelectsOne_ButCannotAdd()
     {
         var desktop = DesktopWith(Program(1, "game.exe", "Game"));
         var games = await GamesWith(desktop, new GameProfile { ExecutableName = "game.exe" });
         using var dialog = new AddGameDialogViewModel(games);
+
+        dialog.SearchText = "game";
 
         Assert.NotNull(dialog.SelectedItem);
         Assert.False(dialog.CanAdd);

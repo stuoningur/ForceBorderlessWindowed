@@ -2,17 +2,20 @@ using CommunityToolkit.Mvvm.ComponentModel;
 using CommunityToolkit.Mvvm.Input;
 
 using ForceBorderlessWindowed.Models;
+using ForceBorderlessWindowed.Resources;
 
 namespace ForceBorderlessWindowed.ViewModels;
 
 /// <summary>One row on the Hotkeys tab.</summary>
 public partial class HotkeyEditorViewModel : ObservableObject
 {
-    public HotkeyEditorViewModel(HotkeyAction action, string header, string description, string glyph, Hotkey? value)
+    public HotkeyEditorViewModel(HotkeyAction action, string header, string description, string glyph, Hotkey? value,
+        string? details = null)
     {
         Action = action;
         Header = header;
         Description = description;
+        Details = details;
         Glyph = glyph;
         Value = value;
     }
@@ -22,6 +25,16 @@ public partial class HotkeyEditorViewModel : ObservableObject
     public string Header { get; }
 
     public string Description { get; }
+
+    /// <summary>
+    /// More about the action than the one-sentence <see cref="Description"/>: the row's tooltip and part of
+    /// <see cref="HelpText"/>. null = nothing more to say.
+    /// </summary>
+    public string? Details { get; }
+
+    /// <summary>What screen readers say about the field: description, details and how the field works.</summary>
+    public string HelpText =>
+        string.Join(" ", new[] { Description, Details, Strings.Hotkeys_Box_Hint }.Where(part => part is not null));
 
     /// <summary>
     /// What screen readers announce for the row: the Hotkeys tab shows the rows in an ItemsControl, which names

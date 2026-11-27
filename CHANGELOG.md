@@ -4,6 +4,20 @@ Every release gets a section here before its tag is pushed: the release workflow
 and stops if the section is missing. Newest first; the heading is `## [version] - date`, with the version exactly as
 in `<Version>` of `ForceBorderlessWindowed.csproj`.
 
+## [Unreleased]
+
+### Changed
+
+- Games tab: the game's name, its status and "Apply to this game" now stay at the top of the details while you scroll. A game that is turned off says "Off" first, before why it isn't running or matched.
+- General tab: "Default window placement" now comes right after Detection.
+- The "Add a game" dialog no longer selects the first running program for you: Add stays disabled until you pick one. After typing a search, the best match is selected, so Enter still adds it.
+- "Remove all" moved into a "⋯" menu next to Remove, as "Remove all games…".
+- Shorter descriptions on the Hotkeys tab. The details of the two "foreground" hotkeys are in their tooltips.
+
+### Fixed
+
+- In a narrow window, the text on the Hotkeys tab sat at the top of its row instead of being centered with the icon and the field.
+
 ## [0.10.1-beta] - 2026-11-27
 
 ### Changed
