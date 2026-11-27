@@ -299,7 +299,19 @@ public partial class SettingsViewModel : ObservableObject
     /// </summary>
     public void UpdateDisplays(nint windowHandle, bool displaysChanged = false)
     {
-        var monitor = _display.GetMonitorForWindow(windowHandle);
+        MonitorBounds monitor;
+        try
+        {
+            monitor = _display.GetMonitorForWindow(windowHandle);
+        }
+        catch (Win32Exception ex)
+        {
+            // Asked in the middle of a display change (a monitor just unplugged): the previews stay as they are until
+            // the next move of this window or the next display change, instead of an error dialog
+            LogMonitorUnknown(ex);
+            return;
+        }
+
         if (monitor == _monitor && !displaysChanged)
         {
             return;
@@ -470,6 +482,9 @@ public partial class SettingsViewModel : ObservableObject
     private void RestartAsAdmin() => _shell.RestartApplication(asAdministrator: true);
 
     private bool CanRestart() => !HasUnsavedChanges;
+
+    [LoggerMessage(Level = LogLevel.Information, Message = "The settings window's display couldn't be found out, previews not updated")]
+    private partial void LogMonitorUnknown(Exception ex);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Saving settings: language {Language}, default placement {Mode}, {GameCount} games")]
     private partial void LogSaving(string? language, PlacementMode mode, int gameCount);
