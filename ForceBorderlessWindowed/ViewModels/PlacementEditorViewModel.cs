@@ -130,6 +130,7 @@ public partial class PlacementEditorViewModel : ObservableObject
             field = value;
             UpdateMonitor(resetCustomValues: false);   // never changes the custom values (see UpdateMonitor)
             OnSummaryChanged();
+            OnPropertyChanged(nameof(DefaultSummary));   // "Use default" on the game's display: see DefaultOnGameMonitor
         }
     }
 
@@ -415,15 +416,21 @@ public partial class PlacementEditorViewModel : ObservableObject
         {
             if (Choice == PlacementChoice.UseDefault)
             {
-                // The default's "display the game is on" is this game's monitor while it runs (the default has no game)
-                return _defaultEditor is { SelectedDisplay.Target: DisplayTarget.Current } defaultEditor && GameMonitor is { } gameMonitor
-                    ? defaultEditor.BuildPreview(gameMonitor)
+                return DefaultOnGameMonitor is { } gameMonitor
+                    ? _defaultEditor!.BuildPreview(gameMonitor)
                     : _defaultEditor?.Preview;
             }
 
             return _monitor is { } monitor ? BuildPreview(monitor) : null;
         }
     }
+
+    /// <summary>
+    /// The default's "display the game is on" is this game's monitor while it runs (the default has no game):
+    /// that monitor then, so preview and summary of "Use default" describe the same window. null = the default's own.
+    /// </summary>
+    private MonitorBounds? DefaultOnGameMonitor =>
+        _defaultEditor is { SelectedDisplay.Target: DisplayTarget.Current } ? GameMonitor : null;
 
     /// <summary>This editor's placement drawn on the given monitor.</summary>
     private PlacementPreviewData BuildPreview(MonitorBounds monitor)
@@ -448,35 +455,43 @@ public partial class PlacementEditorViewModel : ObservableObject
     }
 
     /// <summary>Short description of the effective placement, e.g. "Automatic – 2560 × 1440 at X 1280, primary display".</summary>
-    public string Summary
+    public string Summary => SummaryOn(null);
+
+    /// <summary>The summary, with the automatic size calculated for <paramref name="monitor"/> instead of the previewed one.</summary>
+    /// <param name="monitor">null = the previewed monitor (<see cref="AutomaticPlacement"/>).</param>
+    private string SummaryOn(MonitorBounds? monitor)
     {
-        get
+        var automatic = monitor is { } other && other != _monitor
+            ? PlacementCalculator.CalculateAutomatic(other, SelectedAspectRatio.Ratio, KeepAspectRatio)
+            : AutomaticPlacement;
+
+        var placement = Choice switch
         {
-            var placement = Choice switch
-            {
-                PlacementChoice.UseDefault => null,
-                PlacementChoice.Custom => Format(Formats.Placement_Summary_Custom, Width, Height, OffsetX),
-                PlacementChoice.GameSize => Strings.Placement_Summary_GameSize,
-                _ when AutomaticPlacement is { } automatic =>
-                    string.Format(CultureInfo.CurrentCulture, Formats.Placement_Summary_Automatic,
-                        automatic.Width, automatic.Height, automatic.OffsetX, SelectedAspectRatio.ShortLabel),
-                _ => "",
-            };
+            PlacementChoice.UseDefault => null,
+            PlacementChoice.Custom => Format(Formats.Placement_Summary_Custom, Width, Height, OffsetX),
+            PlacementChoice.GameSize => Strings.Placement_Summary_GameSize,
+            _ when automatic is not null =>
+                string.Format(CultureInfo.CurrentCulture, Formats.Placement_Summary_Automatic,
+                    automatic.Width, automatic.Height, automatic.OffsetX, SelectedAspectRatio.ShortLabel),
+            _ => "",
+        };
 
-            if (placement is null)
-            {
-                return _defaultEditor?.Summary ?? "";   // already includes the default's display
-            }
-
-            return SelectedDisplay is { } display
-                ? string.Format(CultureInfo.CurrentCulture, Formats.Placement_Summary_WithDisplay, placement, display.ShortLabel)
-                : placement;
+        if (placement is null)
+        {
+            return DefaultEffectiveSummary;   // already includes the default's display
         }
+
+        return SelectedDisplay is { } display
+            ? string.Format(CultureInfo.CurrentCulture, Formats.Placement_Summary_WithDisplay, placement, display.ShortLabel)
+            : placement;
     }
+
+    /// <summary>The default's summary as it applies to this game: on the same monitor as the preview.</summary>
+    private string DefaultEffectiveSummary => _defaultEditor?.SummaryOn(DefaultOnGameMonitor) ?? "";
 
     /// <summary>Shown under "Use default", e.g. "Currently: Automatic – 2560 × 1440 at X 1280, primary display".</summary>
     public string DefaultSummary =>
-        _defaultEditor is null ? "" : string.Format(CultureInfo.CurrentCulture, Formats.Placement_CurrentDefault, _defaultEditor.Summary);
+        _defaultEditor is null ? "" : string.Format(CultureInfo.CurrentCulture, Formats.Placement_CurrentDefault, DefaultEffectiveSummary);
 
     /// <summary>
     /// Called when the settings window opens, moves to another monitor, or the displays change.

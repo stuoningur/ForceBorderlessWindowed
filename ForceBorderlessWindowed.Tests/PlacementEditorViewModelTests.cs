@@ -113,6 +113,12 @@ public class PlacementEditorViewModelTests
         Assert.Equal(2560, usingDefault.Preview!.Width);
         Assert.Equal(1920, defaultEditor.Preview!.MonitorWidth);   // the default itself has no game
 
+        // The texts say the same as the preview, not the default's own 1920 × 1080
+        const string size = "2560 × 1440";
+        Assert.Contains(size, usingDefault.Summary);
+        Assert.Contains(size, usingDefault.DefaultSummary);
+        Assert.DoesNotContain(size, defaultEditor.Summary);
+
         // Closed again: back to the guess
         own.GameMonitor = null;
         Assert.Equal(1920, own.Preview!.MonitorWidth);
