@@ -381,6 +381,34 @@ public class WindowTrackerTests
     }
 
     [Fact]
+    public void FileOfTheLastRun_IsNeverWritten_BeforeItWasRead()
+    {
+        _store.Records = [new ChangedWindowRecord(1, 100, 1000, GameExe, 0x00CF0000, 0, 10, 20, 810, 620, false)];
+
+        // The watcher reads it with its first queued work: anything that writes before that must not empty it
+        Assert.False(_tracker.PersistChangedWindows());
+        Assert.Equal(0, _store.SaveCalls);
+        Assert.Single(_store.Records);
+    }
+
+    [Fact]
+    public void ExitBeforeTheLastRunWasRead_StillPutsItsWindowsBack()
+    {
+        var window = _desktop.AddWindow(1, 100, GameExe, hasFrame: false);
+        window.Rect = (440, 0, 3000, 1440);
+        _store.Records = [new ChangedWindowRecord(1, 100, 1000, GameExe, 0x00CF0000, 0, 10, 20, 810, 620, false)];
+
+        // Exit right after startup, before the recovery queued on the watcher thread ran
+        _tracker.BeginExit();
+        _tracker.RestoreAll("app exit");
+        _tracker.PersistChangedWindows();
+
+        Assert.True(window.HasFrame);
+        Assert.Equal((10, 20, 810, 620), window.Rect);
+        Assert.Empty(_store.Records);
+    }
+
+    [Fact]
     public void WindowFromTheLastRun_IsTakenOver_AndRestoredOnPause()
     {
         var window = _desktop.AddWindow(1, 100, GameExe, hasFrame: false);

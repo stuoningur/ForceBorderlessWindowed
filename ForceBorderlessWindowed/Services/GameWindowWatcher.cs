@@ -74,7 +74,8 @@ internal sealed partial class GameWindowWatcher(
             // timers, and a way for other threads to queue work (BeginInvoke)
             _dispatcher = Dispatcher.CurrentDispatcher;
 
-            // Safety net: an exception here would otherwise terminate the whole app
+            // Safety net: an exception here would otherwise terminate the whole app. Only covers work that runs
+            // inside Dispatcher.Run, hence the try/catch around the setup below.
             _dispatcher.UnhandledException += (_, e) =>
             {
                 LogUnexpectedError(e.Exception);
@@ -83,34 +84,19 @@ internal sealed partial class GameWindowWatcher(
 
             try
             {
-                _hooks = new WindowEventHooks(OnWindowEvent);
+                SetUpOnWatcherThread();
             }
-            catch (InvalidOperationException ex)
+            catch (Exception ex)
             {
-                // Not fatal: the poll alone still works, just slower
-                LogHooksFailed(ex);
+                // Not thrown on: on a background thread that would end the process without a word. The app's
+                // startup awaits this task and reports the failure instead.
+                LogStartFailed(ex);
+                _effects?.Stop();
+                _hooks?.Dispose();
+                _hooks = null;
+                started.TrySetException(ex);
+                return;
             }
-
-            _debounceTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher) { Interval = Debounce };
-            _debounceTimer.Tick += (_, _) =>
-            {
-                _debounceTimer.Stop();
-                ReconcileGameWindows();
-            };
-
-            // A taskbar can only still be hidden here if the app crashed or was killed last time.
-            // Undoes only what we had recorded as applied, nothing another program did.
-            ForegroundEffects.UndoRecorded();
-            _effects = new ForegroundEffects();
-            _effectsTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher) { Interval = TimeSpan.FromMilliseconds(500) };
-            _effectsTimer.Tick += (_, _) => UpdateForegroundEffects();
-
-            // Windows we changed in an earlier run that ended without putting them back (crash, or a game that
-            // didn't respond on exit). Before the first check, which then treats them like any tracked window.
-            tracker.RecoverFromLastRun();
-
-            _pollTimer = new DispatcherTimer(PollInterval, DispatcherPriority.Background, (_, _) => Poll(), _dispatcher);
-            _dispatcher.BeginInvoke(Poll);   // first check right away
 
             started.SetResult();
             Dispatcher.Run();   // runs until StopAsync calls InvokeShutdown
@@ -130,6 +116,43 @@ internal sealed partial class GameWindowWatcher(
 
         LogStarted();
         return started.Task;
+    }
+
+    /// <summary>Everything the watcher thread needs before its message loop runs. On the watcher thread.</summary>
+    private void SetUpOnWatcherThread()
+    {
+        try
+        {
+            _hooks = new WindowEventHooks(OnWindowEvent);
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Not fatal: the poll alone still works, just slower
+            LogHooksFailed(ex);
+        }
+
+        _debounceTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher!) { Interval = Debounce };
+        _debounceTimer.Tick += (_, _) =>
+        {
+            _debounceTimer.Stop();
+            ReconcileGameWindows();
+        };
+
+        // A taskbar can only still be hidden here if the app crashed or was killed last time.
+        // Undoes only what we had recorded as applied, nothing another program did.
+        ForegroundEffects.UndoRecorded();
+        _effects = new ForegroundEffects();
+        _effectsTimer = new DispatcherTimer(DispatcherPriority.Background, _dispatcher!) { Interval = TimeSpan.FromMilliseconds(500) };
+        _effectsTimer.Tick += (_, _) => UpdateForegroundEffects();
+
+        // Windows we changed in an earlier run that ended without putting them back (crash, or a game that
+        // didn't respond on exit). Queued before the first check (same priority, so it runs first), which then
+        // treats them like any tracked window. Queued instead of called here: inside the message loop, an
+        // unexpected error is caught by the safety net and the watcher keeps running.
+        _dispatcher!.BeginInvoke(tracker.RecoverFromLastRun);
+
+        _pollTimer = new DispatcherTimer(PollInterval, DispatcherPriority.Background, (_, _) => Poll(), _dispatcher);
+        _dispatcher.BeginInvoke(Poll);   // first check right away
     }
 
     public Task StopAsync(CancellationToken cancellationToken)
@@ -311,6 +334,9 @@ internal sealed partial class GameWindowWatcher(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Watcher started")]
     private partial void LogStarted();
+
+    [LoggerMessage(Level = LogLevel.Critical, Message = "The watcher could not start")]
+    private partial void LogStartFailed(Exception ex);
 
     [LoggerMessage(Level = LogLevel.Warning, Message = "Window events unavailable, falling back to polling only")]
     private partial void LogHooksFailed(Exception ex);

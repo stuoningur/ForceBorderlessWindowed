@@ -34,10 +34,11 @@ internal sealed partial class WindowTracker(
     private HashSet<ChangedWindowRecord>? _persistedRecords;
 
     /// <summary>
-    /// The file of the last run couldn't be read yet (locked, access denied). Until it can, it is read again on
-    /// every check and never written: writing would replace the original state of those windows.
+    /// The file of the last run hasn't been read yet: not tried yet (true from the start), or it couldn't be read
+    /// (locked, access denied). Until it is, it is read again on every check and never written: writing would
+    /// replace the original state of those windows.
     /// </summary>
-    private bool _recoveryPending;
+    private bool _recoveryPending = true;
 
     /// <summary>Windows we have changed (or tried to), with their original state for restoring.</summary>
     private readonly Dictionary<nint, TrackedWindow> _tracked = [];
