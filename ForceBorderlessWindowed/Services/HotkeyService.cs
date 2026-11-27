@@ -249,9 +249,12 @@ internal sealed partial class HotkeyService(
         {
             case HotkeyAction.TogglePause:
                 // Same as the tray toggle: tray checkmark, tooltip and settings window follow through SettingsChanged
-                settings.Save(settings.Current with { IsPaused = !settings.Current.IsPaused });
-                overlay.Show(settings.Current.IsPaused ? Strings.Overlay_Paused : Strings.Overlay_Resumed,
-                    settings.Current.IsPaused ? OverlayKind.Info : OverlayKind.Success);
+                if (TrySave(settings.Current with { IsPaused = !settings.Current.IsPaused }))
+                {
+                    overlay.Show(settings.Current.IsPaused ? Strings.Overlay_Paused : Strings.Overlay_Resumed,
+                        settings.Current.IsPaused ? OverlayKind.Info : OverlayKind.Success);
+                }
+
                 break;
 
             case HotkeyAction.AddForegroundGame:
@@ -334,13 +337,38 @@ internal sealed partial class HotkeyService(
         var profile = GameProfile.FromRunningProgram(program, GameNames.GetFriendlyName(program.ExecutablePath));
 
         icons.Remember(program.ExecutableName, program.ExecutablePath);
-        settings.Save(current with { Games = [.. current.Games, profile] });
+        if (!TrySave(current with { Games = [.. current.Games, profile] }))
+        {
+            return;
+        }
+
         LogAdded(program.ExecutableName);
         PlaySuccess();
 
         // Added while paused: it's in the list, but nothing happens to it yet
         overlay.Show(Format(current.IsPaused ? Formats.Overlay_AddedPaused : Formats.Overlay_Added, profile.DisplayName ?? profile.ExecutableName),
             OverlayKind.Success);
+    }
+
+    /// <summary>
+    /// Saves for a hotkey. A hotkey is usually pressed in a game: a failed save (settings file locked, refused as
+    /// administrator) is told with the failure sound and a message over the game like every other hotkey problem,
+    /// not with the error dialog, which would take the focus from the game. Logged with the details.
+    /// </summary>
+    private bool TrySave(AppSettings newSettings)
+    {
+        try
+        {
+            settings.Save(newSettings);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            LogSaveFailed(ex);
+            PlayFailure();
+            overlay.Show(Strings.Overlay_NotSaved, OverlayKind.Warning);
+            return false;
+        }
     }
 
     // The hotkey sounds, unless turned off on the Hotkeys tab. Any thread (the one-off result arrives on the watcher's).
@@ -435,6 +463,9 @@ internal sealed partial class HotkeyService(
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Hotkey: one-off borderless for {Exe} -> {Result}")]
     private partial void LogOneOff(string exe, OneOffResult result);
+
+    [LoggerMessage(Level = LogLevel.Warning, Message = "Hotkey: the settings could not be saved, nothing changed")]
+    private partial void LogSaveFailed(Exception ex);
 
     [LoggerMessage(Level = LogLevel.Information, Message = "Hotkey: foreground window not added ({Reason})")]
     private partial void LogNoForegroundProgram(string reason);

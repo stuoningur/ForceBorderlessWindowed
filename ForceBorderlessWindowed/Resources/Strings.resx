@@ -842,6 +842,9 @@
   <data name="Overlay_Resumed" xml:space="preserve">
     <value>Detection resumed</value>
   </data>
+  <data name="Overlay_NotSaved" xml:space="preserve">
+    <value>Settings couldn’t be saved, nothing changed – details are in the log file</value>
+  </data>
   <data name="Hotkeys_ShowMessages" xml:space="preserve">
     <value>Show a message over the game</value>
   </data>

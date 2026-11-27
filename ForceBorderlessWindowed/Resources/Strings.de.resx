@@ -838,6 +838,9 @@
   <data name="Overlay_Resumed" xml:space="preserve">
     <value>Erkennung fortgesetzt</value>
   </data>
+  <data name="Overlay_NotSaved" xml:space="preserve">
+    <value>Einstellungen konnten nicht gespeichert werden, nichts geändert – Details in der Logdatei</value>
+  </data>
   <data name="Hotkeys_ShowMessages" xml:space="preserve">
     <value>Meldung über dem Spiel anzeigen</value>
   </data>
