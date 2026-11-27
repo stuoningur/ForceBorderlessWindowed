@@ -201,14 +201,21 @@ internal sealed class WindowManipulator : IWindowManipulator
 
             // Read again: the styles above still have WS_MAXIMIZE, and writing them back would mark the
             // window as maximized again (it would then count as "changed" on every check and trip the fight limit)
-            newStyle = (WINDOW_STYLE)(uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE) & ~FrameStyles;
-            newExStyle = (WINDOW_EX_STYLE)(uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE) & ~EdgeExStyles;
+            style = (WINDOW_STYLE)(uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE);
+            exStyle = (WINDOW_EX_STYLE)(uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_EXSTYLE);
+            newStyle = style & ~FrameStyles;
+            newExStyle = exStyle & ~EdgeExStyles;
         }
 
-        var result = SetStyles(hwnd, (uint)newStyle, (uint)newExStyle, ref modified, out error);
-        if (result != WindowChangeResult.Applied)
+        // Only moved or resized (the frame is gone already): the styles are left alone, so the game isn't sent
+        // style-change messages for nothing (each one waits for the game to answer)
+        if (style != newStyle || exStyle != newExStyle)
         {
-            return result;
+            var result = SetStyles(hwnd, (uint)newStyle, (uint)newExStyle, ref modified, out error);
+            if (result != WindowChangeResult.Applied)
+            {
+                return result;
+            }
         }
 
         // Onto another monitor: first only move it there, then set the final size. Moved and resized in one go,
@@ -217,15 +224,23 @@ internal sealed class WindowManipulator : IWindowManipulator
         // itself; the second, queued behind it on the app's thread (both async), then sets our size.
         // Same approach as PowerToys FancyZones. Monitors are compared instead of DPI values: an app that
         // ignores scaling reports misleading ones, and an extra move between equally scaled monitors is harmless.
-        if (!IsOnMonitorAt(hwnd, monitor.Left, monitor.Top)
-            && !PInvoke.SetWindowPos(hwnd, HWND.Null, x, y, 0, 0, PositionFlags | SET_WINDOW_POS_FLAGS.SWP_NOSIZE))
+        if (!IsOnMonitorAt(hwnd, monitor.Left, monitor.Top))
         {
-            return LastErrorResult("SetWindowPos (move to display)", out error);
+            if (!PInvoke.SetWindowPos(hwnd, HWND.Null, x, y, 0, 0, PositionFlags | SET_WINDOW_POS_FLAGS.SWP_NOSIZE))
+            {
+                return LastErrorResult("SetWindowPos (move to display)", out error);
+            }
+
+            modified = true;   // moved: its old place is part of what a restore puts back
         }
 
-        return PInvoke.SetWindowPos(hwnd, HWND.Null, x, y, placement.Width, placement.Height, PositionFlags)
-            ? WindowChangeResult.Applied
-            : LastErrorResult("SetWindowPos", out error);
+        if (!PInvoke.SetWindowPos(hwnd, HWND.Null, x, y, placement.Width, placement.Height, PositionFlags))
+        {
+            return LastErrorResult("SetWindowPos", out error);
+        }
+
+        modified = true;
+        return WindowChangeResult.Applied;
     }
 
     public WindowChangeResult Restore(nint windowHandle, WindowSnapshot snapshot, out WindowChangeError? error)
