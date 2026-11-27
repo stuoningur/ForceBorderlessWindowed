@@ -19,6 +19,14 @@ public enum PlacementChoice
     GameSize,
 }
 
+/// <summary>Where the one-off offset buttons put the custom width on the display.</summary>
+public enum OffsetAlignment
+{
+    Left,
+    Center,
+    Right,
+}
+
 /// <summary>
 /// Editor for a <see cref="PlacementSettings"/>. Used for the global default (no "Use default" option)
 /// and for each game (with "Use default", which then shows what the default currently resolves to).
@@ -602,26 +610,34 @@ public partial class PlacementEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(IsValid));
         OnPropertyChanged(nameof(FirstInvalidField));
         OnPropertyChanged(nameof(Preview));
-        CenterXCommand.NotifyCanExecuteChanged();
+        AlignXCommand.NotifyCanExecuteChanged();
     }
 
     /// <summary>
-    /// One-off: fills in the offset that centers the custom width on the previewed display. It stays an ordinary
-    /// value afterwards. With "the display the game is on" that's the settings window's monitor, so on a display
-    /// of another width the game ends up off-center (the watcher still keeps it on screen).
+    /// One-off: fills in the offset that puts the custom width at the left edge, the center or the right edge of
+    /// the previewed display. It stays an ordinary value afterwards. With "the display the game is on" that's the
+    /// settings window's monitor, so on a display of another width the game ends up off-center / not flush right
+    /// (the watcher still keeps it on screen).
     /// Through the text, like the automatic pre-fill: that also clears a mistyped offset's error.
     /// </summary>
-    [RelayCommand(CanExecute = nameof(CanCenterX))]
-    private void CenterX()
+    [RelayCommand(CanExecute = nameof(CanAlignX))]
+    private void AlignX(OffsetAlignment alignment)
     {
         if (_monitor is { } monitor)
         {
-            OffsetXText = ((monitor.Width - Width) / 2).ToString(CultureInfo.CurrentCulture);
+            var free = monitor.Width - Width;
+            var offset = alignment switch
+            {
+                OffsetAlignment.Left => 0,
+                OffsetAlignment.Right => free,
+                _ => free / 2,
+            };
+            OffsetXText = offset.ToString(CultureInfo.CurrentCulture);
         }
     }
 
-    /// <summary>Only for a valid width that fits: otherwise there is nothing to center.</summary>
-    private bool CanCenterX() =>
+    /// <summary>Only for a valid width that fits: otherwise there is nothing to align.</summary>
+    private bool CanAlignX() =>
         Choice == PlacementChoice.Custom && WidthInputError is null && Width > 0
         && _monitor is { } monitor && Width <= monitor.Width;
 

@@ -170,7 +170,7 @@
                     <controls:FieldError Text="{Binding HeightError}" Target="{Binding ElementName=HeightBox}" />
                 </StackPanel>
 
-                <!-- Wider than the others for the "Center" button: the field itself keeps their width,
+                <!-- Wider than the others for the Left/Center/Right buttons: the field itself keeps their width,
                      and the error below wraps within the row's width instead of widening it -->
                 <StackPanel Style="{StaticResource NumberFieldStyle}" Width="Auto">
                     <controls:FieldLabel Content="{x:Static res:Strings.Placement_OffsetX}"
@@ -180,12 +180,24 @@
                             <TextBlock Style="{StaticResource UnitTextStyle}" />
                             <TextBox x:Name="OffsetBox" Text="{Binding OffsetXText, UpdateSourceTrigger=PropertyChanged}" />
                         </DockPanel>
-                        <!-- Same gap as between the fields, so it reads as an action of the row, not part of
-                             "px". Stretch: the button style is shorter than a text box and would sit centered. -->
-                        <Button Margin="16,0,0,0" MinWidth="88" VerticalAlignment="Stretch" Command="{Binding CenterXCommand}"
+                        <!-- Same gap as between the fields, so they read as actions of the row, not part of
+                             "px"; a small gap between the three keeps them one group. Stretch: the button style is
+                             shorter than a text box and would sit centered. No access keys: the letters are taken. -->
+                        <Button Margin="16,0,0,0" MinWidth="64" VerticalAlignment="Stretch" Command="{Binding AlignXCommand}"
+                                CommandParameter="{x:Static vm:OffsetAlignment.Left}"
+                                Content="{x:Static res:Strings.Placement_AlignLeft}"
+                                ToolTip="{x:Static res:Strings.Placement_AlignLeft_Tooltip}"
+                                AutomationProperties.HelpText="{x:Static res:Strings.Placement_AlignLeft_Tooltip}" />
+                        <Button Margin="4,0,0,0" MinWidth="64" VerticalAlignment="Stretch" Command="{Binding AlignXCommand}"
+                                CommandParameter="{x:Static vm:OffsetAlignment.Center}"
                                 Content="{x:Static res:Strings.Placement_CenterX}"
                                 ToolTip="{x:Static res:Strings.Placement_CenterX_Tooltip}"
                                 AutomationProperties.HelpText="{x:Static res:Strings.Placement_CenterX_Tooltip}" />
+                        <Button Margin="4,0,0,0" MinWidth="64" VerticalAlignment="Stretch" Command="{Binding AlignXCommand}"
+                                CommandParameter="{x:Static vm:OffsetAlignment.Right}"
+                                Content="{x:Static res:Strings.Placement_AlignRight}"
+                                ToolTip="{x:Static res:Strings.Placement_AlignRight_Tooltip}"
+                                AutomationProperties.HelpText="{x:Static res:Strings.Placement_AlignRight_Tooltip}" />
                     </StackPanel>
                     <controls:FieldError Width="{Binding ActualWidth, ElementName=OffsetRow}"
                                          Text="{Binding OffsetXError}" Target="{Binding ElementName=OffsetBox}" />

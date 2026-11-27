@@ -349,8 +349,20 @@
   <data name="Placement_OffsetX" xml:space="preserve">
     <value>_Versatz X</value>
   </data>
+  <data name="Placement_AlignLeft" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="Placement_AlignLeft_Tooltip" xml:space="preserve">
+    <value>Versatz so setzen, dass das Fenster am linken Bildschirmrand anliegt</value>
+  </data>
+  <data name="Placement_AlignRight" xml:space="preserve">
+    <value>Rechts</value>
+  </data>
+  <data name="Placement_AlignRight_Tooltip" xml:space="preserve">
+    <value>Versatz so setzen, dass das Fenster am rechten Bildschirmrand anliegt</value>
+  </data>
   <data name="Placement_CenterX" xml:space="preserve">
-    <value>Zentrieren</value>
+    <value>Mitte</value>
   </data>
   <data name="Placement_CenterX_Tooltip" xml:space="preserve">
     <value>Versatz so setzen, dass das Fenster waagerecht auf dem Bildschirm zentriert ist</value>

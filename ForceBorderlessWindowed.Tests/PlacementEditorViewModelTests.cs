@@ -36,6 +36,31 @@ public class PlacementEditorViewModelTests
         Assert.Null(editor.FitWarning);
     }
 
+    [Theory]
+    [InlineData(OffsetAlignment.Left, 0)]
+    [InlineData(OffsetAlignment.Center, 320)]
+    [InlineData(OffsetAlignment.Right, 640)]
+    public void AlignX_FillsTheOffsetForTheDisplay(OffsetAlignment alignment, int expected)
+    {
+        var editor = EditorFor(new WindowPlacement(1280, 720, 100));
+
+        Assert.True(editor.AlignXCommand.CanExecute(alignment));
+        editor.AlignXCommand.Execute(alignment);
+
+        Assert.Equal(expected.ToString(System.Globalization.CultureInfo.CurrentCulture), editor.OffsetXText);
+        Assert.True(editor.IsValid);
+    }
+
+    [Fact]
+    public void AlignX_IsDisabled_ForAWidthThatDoesNotFit()
+    {
+        var editor = EditorFor(new WindowPlacement(1280, 720, 0));
+
+        editor.WidthText = "2000";
+
+        Assert.False(editor.AlignXCommand.CanExecute(OffsetAlignment.Right));
+    }
+
     [Fact]
     public void SavedValues_ThatFit_GiveNoWarning()
     {

@@ -352,6 +352,18 @@
   <data name="Placement_OffsetX" xml:space="preserve">
     <value>_Offset X</value>
   </data>
+  <data name="Placement_AlignLeft" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="Placement_AlignLeft_Tooltip" xml:space="preserve">
+    <value>Set the offset so the window touches the left edge of the display</value>
+  </data>
+  <data name="Placement_AlignRight" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="Placement_AlignRight_Tooltip" xml:space="preserve">
+    <value>Set the offset so the window touches the right edge of the display</value>
+  </data>
   <data name="Placement_CenterX" xml:space="preserve">
     <value>Center</value>
   </data>
