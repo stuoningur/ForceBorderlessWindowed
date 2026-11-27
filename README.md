@@ -6,7 +6,7 @@ You add a game once. From then on, whenever it runs, the app removes the window 
 
 It works with any program that has a normal window. It can't do anything for games that only run in exclusive fullscreen; start those in windowed mode first.
 
-![The settings window with the General, Games and Hotkeys tabs](docs/settings-window.png)
+![The settings window: the General tab (left) and the Games tab (right), each split diagonally between light and dark mode](docs/settings-window.png)
 
 ## Download
 
