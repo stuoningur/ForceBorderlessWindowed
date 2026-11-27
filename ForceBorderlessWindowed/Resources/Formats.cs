@@ -24,6 +24,15 @@ internal static class Formats
     public static CompositeFormat Games_MatchConflict =>
         field ??= CompositeFormat.Parse(Strings.Games_MatchConflict);
 
+    public static CompositeFormat Games_Add_OnDisplay =>
+        field ??= CompositeFormat.Parse(Strings.Games_Add_OnDisplay);
+
+    public static CompositeFormat Games_Add_UsedBy =>
+        field ??= CompositeFormat.Parse(Strings.Games_Add_UsedBy);
+
+    public static CompositeFormat Games_Add_NoMatch =>
+        field ??= CompositeFormat.Parse(Strings.Games_Add_NoMatch);
+
     public static CompositeFormat Placement_Summary_Automatic =>
         field ??= CompositeFormat.Parse(Strings.Placement_Summary_Automatic);
 

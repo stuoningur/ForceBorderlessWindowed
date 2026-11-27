@@ -950,4 +950,22 @@
   <data name="Placement_Preset_RightHalf" xml:space="preserve">
     <value>Right half</value>
   </data>
+  <data name="Games_Add_Intro" xml:space="preserve">
+    <value>Start the game, then pick its window. If it isn't running, choose its program file or enter the file name.</value>
+  </data>
+  <data name="Games_Add_Search" xml:space="preserve">
+    <value>_Search by window title or file name</value>
+  </data>
+  <data name="Games_Add_Confirm" xml:space="preserve">
+    <value>_Add</value>
+  </data>
+  <data name="Games_Add_OnDisplay" xml:space="preserve">
+    <value>Display {0}: {1}</value>
+  </data>
+  <data name="Games_Add_UsedBy" xml:space="preserve">
+    <value>Already added: {0}</value>
+  </data>
+  <data name="Games_Add_NoMatch" xml:space="preserve">
+    <value>No running window matches “{0}”.</value>
+  </data>
 </root>

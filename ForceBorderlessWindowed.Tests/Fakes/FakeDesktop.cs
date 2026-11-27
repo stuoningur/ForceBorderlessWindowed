@@ -196,7 +196,13 @@ internal sealed class FakeDesktop : IWindowManipulator, IWindowQueries, IProcess
 
     // ---- IProcessDiscoveryService: same choice as the real one (largest visible window per process) ----
 
-    public IReadOnlyList<RunningProgram> GetRunningPrograms() => [];
+    /// <summary>What the Games tab's running list gets (the tracker doesn't use it).</summary>
+    public List<RunningProgram> RunningPrograms { get; } = [];
+
+    /// <summary>Which monitor each window is on, for <see cref="GetMonitorForWindow"/>; the first display otherwise.</summary>
+    public Dictionary<nint, MonitorBounds> WindowMonitors { get; } = [];
+
+    public IReadOnlyList<RunningProgram> GetRunningPrograms() => [.. RunningPrograms];
 
     public IReadOnlyList<GameWindow> FindGameWindows(
         IReadOnlyCollection<GameProfile> games, IReadOnlyDictionary<nint, long>? originalAreas = null)
@@ -223,7 +229,7 @@ internal sealed class FakeDesktop : IWindowManipulator, IWindowQueries, IProcess
 
     // ---- IDisplayService ----
 
-    public MonitorBounds GetMonitorForWindow(nint windowHandle) => Displays[0].Bounds;
+    public MonitorBounds GetMonitorForWindow(nint windowHandle) => WindowMonitors.GetValueOrDefault(windowHandle, Displays[0].Bounds);
 
     public IReadOnlyList<DisplayInfo> GetDisplays() => Displays;
 }

@@ -39,19 +39,6 @@
             <Setter Property="HorizontalAlignment" Value="Center" />
             <Setter Property="FontSize" Value="12" />
         </Style>
-
-        <!-- Grey tile with a generic game glyph, only while the game has no icon of its own.
-             Hidden otherwise: it would show through the transparent parts of the real icon. -->
-        <Style x:Key="IconPlaceholderStyle" TargetType="Border">
-            <Setter Property="CornerRadius" Value="4" />
-            <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
-            <Setter Property="Visibility" Value="Collapsed" />
-            <Style.Triggers>
-                <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
-                    <Setter Property="Visibility" Value="Visible" />
-                </DataTrigger>
-            </Style.Triggers>
-        </Style>
     </Window.Resources>
 
     <Grid>
@@ -254,47 +241,9 @@
                                      ScrollViewer.HorizontalScrollBarVisibility="Disabled"
                                      AutomationProperties.Name="{x:Static res:Strings.Settings_Tab_Games}">
                                 <ListBox.ItemContainerStyle>
-                                    <!-- Windows 11 list look: subtle fill + a short accent bar on the left for the selected
-                                         entry, instead of a fully accent-colored block (on which dimmed text was hard to read).
-                                         AutomationProperties.Name: what a screen reader says (name, status, off, error);
-                                         without it, it would read the ViewModel's class name. -->
-                                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+                                    <!-- What a screen reader says (name, status, off, error), see SubtleListBoxItemStyle -->
+                                    <Style TargetType="ListBoxItem" BasedOn="{StaticResource SubtleListBoxItemStyle}">
                                         <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}" />
-                                        <Setter Property="Padding" Value="12,6" />
-                                        <Setter Property="Margin" Value="4,1" />
-                                        <!-- The margins keep the keyboard focus rectangle inside the list's scroll area,
-                                             which would otherwise clip it to a single line -->
-                                        <Setter Property="FocusVisualStyle" Value="{DynamicResource DefaultControlFocusVisualStyle}" />
-                                        <Setter Property="Template">
-                                            <Setter.Value>
-                                                <ControlTemplate TargetType="ListBoxItem">
-                                                    <Grid Background="Transparent">
-                                                        <Border x:Name="Fill" CornerRadius="4" Background="Transparent" />
-                                                        <Border x:Name="SelectionBar" Width="3" Height="16" CornerRadius="1.5"
-                                                                HorizontalAlignment="Left" VerticalAlignment="Center"
-                                                                Background="{DynamicResource AccentFillColorDefaultBrush}"
-                                                                Visibility="Collapsed" />
-                                                        <ContentPresenter Margin="{TemplateBinding Padding}" />
-                                                    </Grid>
-                                                    <ControlTemplate.Triggers>
-                                                        <Trigger Property="IsMouseOver" Value="True">
-                                                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
-                                                        </Trigger>
-                                                        <Trigger Property="IsSelected" Value="True">
-                                                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
-                                                            <Setter TargetName="SelectionBar" Property="Visibility" Value="Visible" />
-                                                        </Trigger>
-                                                        <MultiTrigger>
-                                                            <MultiTrigger.Conditions>
-                                                                <Condition Property="IsSelected" Value="True" />
-                                                                <Condition Property="IsMouseOver" Value="True" />
-                                                            </MultiTrigger.Conditions>
-                                                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
-                                                        </MultiTrigger>
-                                                    </ControlTemplate.Triggers>
-                                                </ControlTemplate>
-                                            </Setter.Value>
-                                        </Setter>
                                     </Style>
                                 </ListBox.ItemContainerStyle>
                                 <ListBox.ItemTemplate>
@@ -383,14 +332,12 @@
 
                         <!-- Wraps: with a narrow list and longer translations, Remove moves below Add instead of being cut off -->
                         <WrapPanel Grid.Row="1" Margin="0,8,0,8" Orientation="Horizontal">
-                            <!-- Opens a menu with the running programs, built in code-behind (OnAddGameClick).
-                                 The chevron says "this opens a menu". -->
+                            <!-- Opens the "Add a game" dialog (OnAddGameClick) -->
                             <Button MinWidth="88" Margin="0,0,8,8" Click="OnAddGameClick"
                                     AutomationProperties.Name="{Binding Source={x:Static res:Strings.Games_AddMenu}, Converter={x:Static views:AccessKeyConverter.Instance}}">
                                 <StackPanel Orientation="Horizontal">
                                     <controls:FontIcon Margin="0,0,8,0" Style="{StaticResource IconTextStyle}" Text="&#xE710;" />
                                     <AccessText Text="{x:Static res:Strings.Games_AddMenu}" />
-                                    <controls:FontIcon Margin="8,0,0,0" Style="{StaticResource IconTextStyle}" FontSize="12" Text="&#xE70D;" />
                                 </StackPanel>
                             </Button>
                             <Button MinWidth="88" Margin="0,0,0,8" Command="{Binding RemoveCommand}"
@@ -420,7 +367,6 @@
                                 <StackPanel Orientation="Horizontal">
                                     <controls:FontIcon Margin="0,0,8,0" Style="{StaticResource IconTextStyle}" Text="&#xE710;" />
                                     <TextBlock Text="{x:Static res:Strings.Games_Empty_Add}" />
-                                    <controls:FontIcon Margin="8,0,0,0" Style="{StaticResource IconTextStyle}" FontSize="12" Text="&#xE70D;" />
                                 </StackPanel>
                             </Button>
                         </StackPanel>

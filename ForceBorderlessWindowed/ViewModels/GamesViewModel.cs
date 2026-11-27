@@ -14,7 +14,22 @@ using ForceBorderlessWindowed.Services;
 namespace ForceBorderlessWindowed.ViewModels;
 
 /// <summary>An entry in the "Add" menu.</summary>
-public sealed record RunningProgramItem(RunningProgram Program, bool IsAlreadyAdded, ImageSource? Icon);
+/// <summary>A running program as the "Add a game" dialog lists it.</summary>
+/// <param name="UsedBy">The game in the list that takes its window (see GameMatcher), or null: it can be added.</param>
+/// <param name="DisplayLabel">The display its window is on, e.g. "Display 2: DELL U2723QE"; null with only one display.</param>
+public sealed record RunningProgramItem(RunningProgram Program, string? UsedBy, ImageSource? Icon, string? DisplayLabel)
+{
+    public bool IsAlreadyAdded => UsedBy is not null;
+
+    /// <summary>Second line: the exe name, and the display if there are several.</summary>
+    public string Details => DisplayLabel is null ? Program.ExecutableName : $"{Program.ExecutableName} · {DisplayLabel}";
+
+    /// <summary>"Already added: Elden Ring", or null.</summary>
+    public string? UsedByText => UsedBy is null ? null : string.Format(CultureInfo.CurrentCulture, Formats.Games_Add_UsedBy, UsedBy);
+
+    /// <summary>What a screen reader says for the entry: everything the row shows.</summary>
+    public string AccessibleName => string.Join(", ", new[] { Program.WindowTitle, Details, UsedByText }.Where(s => s is not null));
+}
 
 /// <summary>The "Games" tab: list of game profiles plus the selected one in the detail view.</summary>
 public partial class GamesViewModel : ObservableObject
@@ -38,8 +53,10 @@ public partial class GamesViewModel : ObservableObject
         IGameStatusProvider statusProvider,
         IGameIconService icons,
         IScreenPreview? screenPreview = null,
-        Func<GameProfile, RunningGameWindow?>? runningGame = null)
+        Func<GameProfile, RunningGameWindow?>? runningGame = null,
+        Func<nint, MonitorBounds>? windowMonitor = null)
     {
+        _windowMonitor = windowMonitor;
         _screenPreview = screenPreview;
         _runningGame = runningGame;
         _discovery = discovery;
@@ -74,7 +91,10 @@ public partial class GamesViewModel : ObservableObject
     /// <summary>No games yet: the details area shows the "add your first game" page instead.</summary>
     public bool IsEmpty => Profiles.Count == 0;
 
-    /// <summary>Running programs from the last refresh, for the "Add" menu.</summary>
+    /// <summary>The monitor a window is on (see IDisplayService), for the display column of the Add dialog.</summary>
+    private readonly Func<nint, MonitorBounds>? _windowMonitor;
+
+    /// <summary>Running programs from the last refresh, for the "Add a game" dialog.</summary>
     [ObservableProperty]
     public partial IReadOnlyList<RunningProgramItem> RunningPrograms { get; private set; }
 
@@ -244,7 +264,8 @@ public partial class GamesViewModel : ObservableObject
             .Select(p => (Exe: p.ExecutableName.Trim(), Path: p.ExecutablePath!))
             .ToList();
 
-        var (programs, icons, gameMonitors) = await Task.Run(() =>
+        var displays = _displays;
+        var (programs, icons, gameMonitors, programMonitors) = await Task.Run(() =>
         {
             // Games that aren't running: their icon from the saved path. Read once per file (the icon service
             // caches per path), so this costs nothing on the next refreshes. A moved or deleted file has no icon.
@@ -284,7 +305,10 @@ public partial class GamesViewModel : ObservableObject
                 }
             }
 
-            return (found, found.Select(p => _icons.GetIconForFile(p.ExecutablePath)).ToList(), monitors);
+            // The display of each program's window: only worth asking with more than one display
+            var windowMonitors = found.Select(p => displays.Count > 1 ? MonitorOf(p.WindowHandle) : null).ToList();
+
+            return (found, found.Select(p => _icons.GetIconForFile(p.ExecutablePath)).ToList(), monitors, windowMonitors);
         });
 
         // Back on the UI thread
@@ -302,8 +326,9 @@ public partial class GamesViewModel : ObservableObject
 
         UpdateMatchConflicts();
 
+        var games = Profiles.Select(p => p.ToProfile()).ToList();
         IReadOnlyList<RunningProgramItem> items = [.. programs.Select((p, i) => new RunningProgramItem(
-            p, IsConfigured(p), icons[i]))];
+            p, UsedBy(games, p), icons[i], DisplayLabel(displays, programMonitors[i])))];
 
         // Only replace the list when something changed, so its bindings aren't rebuilt every 3 s
         if (!items.SequenceEqual(RunningPrograms))
@@ -311,6 +336,39 @@ public partial class GamesViewModel : ObservableObject
             RunningPrograms = items;
         }
     }
+
+    /// <summary>The monitor of a window, or null if it can't be found out (closed in between, no handle).</summary>
+    private MonitorBounds? MonitorOf(nint windowHandle)
+    {
+        if (_windowMonitor is null || windowHandle == 0)
+        {
+            return null;
+        }
+
+        try
+        {
+            return _windowMonitor(windowHandle);
+        }
+        catch (Win32Exception)
+        {
+            return null;
+        }
+    }
+
+    private static string? DisplayLabel(IReadOnlyList<DisplayInfo> displays, MonitorBounds? monitor) =>
+        monitor is { } bounds && displays.FirstOrDefault(d => d.Bounds == bounds) is { } display
+            ? string.Format(CultureInfo.CurrentCulture, Formats.Games_Add_OnDisplay, display.Number, display.Name)
+            : null;
+
+    /// <summary>
+    /// The game in the list (as edited, also a turned-off one) that takes this program's window, by the same rule as
+    /// the watcher: its title, or null. Adding the program again would only make a duplicate.
+    /// </summary>
+    private string? UsedBy(List<GameProfile> games, RunningProgram program) =>
+        GameMatcher.FindBest(games.Where(g => !string.IsNullOrWhiteSpace(g.ExecutableName)),
+            program.ExecutableName, program.ExecutablePath, () => program.WindowTitle) is { } game
+            ? Profiles.First(p => p.Id == game.Id).Title
+            : null;
 
     [RelayCommand(CanExecute = nameof(CanAddRunning))]
     private void AddRunning(RunningProgramItem? item)

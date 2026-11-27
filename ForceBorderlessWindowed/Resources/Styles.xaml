@@ -413,7 +413,7 @@
         Menu item with ONE icon column, like Windows 11's own context menus: it holds the icon, or the checkmark
         for checked items. Fluent's WPF templates use two shared columns (checkbox + icon) for normal items but
         only one for submenu headers, so icons, checkmark and texts ended up at three different positions.
-        Used for every item of the tray menu and the "Add" menu, including the submenu's own items.
+        Used for every item of the tray menu, including the submenu's own items.
     -->
     <Style x:Key="AlignedMenuItemStyle" TargetType="MenuItem">
         <Setter Property="Foreground" Value="{DynamicResource TextFillColorPrimaryBrush}" />
@@ -498,5 +498,60 @@
         <Setter Property="WindowBrush" Value="{DynamicResource AccentFillColorDefaultBrush}" />
         <Setter Property="OverflowBrush" Value="{DynamicResource SystemFillColorCautionBrush}" />
         <Setter Property="TextBrush" Value="{DynamicResource TextFillColorPrimaryBrush}" />
+    </Style>
+
+    <!-- Grey tile with a generic game glyph, only while the game has no icon of its own.
+         Hidden otherwise: it would show through the transparent parts of the real icon. -->
+    <Style x:Key="IconPlaceholderStyle" TargetType="Border">
+        <Setter Property="CornerRadius" Value="4" />
+        <Setter Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+        <Setter Property="Visibility" Value="Collapsed" />
+        <Style.Triggers>
+            <DataTrigger Binding="{Binding Icon}" Value="{x:Null}">
+                <Setter Property="Visibility" Value="Visible" />
+            </DataTrigger>
+        </Style.Triggers>
+    </Style>
+
+    <!-- Windows 11 list look: subtle fill + a short accent bar on the left for the selected
+         entry, instead of a fully accent-colored block (on which dimmed text was hard to read).
+         Lists based on it set AutomationProperties.Name to what a screen reader says: without it, it would read
+         the ViewModel's class name. Used by the Games list and the "Add a game" dialog. -->
+    <Style x:Key="SubtleListBoxItemStyle" TargetType="ListBoxItem" BasedOn="{StaticResource {x:Type ListBoxItem}}">
+        <Setter Property="Padding" Value="12,6" />
+        <Setter Property="Margin" Value="4,1" />
+        <!-- The margins keep the keyboard focus rectangle inside the list's scroll area,
+             which would otherwise clip it to a single line -->
+        <Setter Property="FocusVisualStyle" Value="{DynamicResource DefaultControlFocusVisualStyle}" />
+        <Setter Property="Template">
+            <Setter.Value>
+                <ControlTemplate TargetType="ListBoxItem">
+                    <Grid Background="Transparent">
+                        <Border x:Name="Fill" CornerRadius="4" Background="Transparent" />
+                        <Border x:Name="SelectionBar" Width="3" Height="16" CornerRadius="1.5"
+                                HorizontalAlignment="Left" VerticalAlignment="Center"
+                                Background="{DynamicResource AccentFillColorDefaultBrush}"
+                                Visibility="Collapsed" />
+                        <ContentPresenter Margin="{TemplateBinding Padding}" />
+                    </Grid>
+                    <ControlTemplate.Triggers>
+                        <Trigger Property="IsMouseOver" Value="True">
+                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                        </Trigger>
+                        <Trigger Property="IsSelected" Value="True">
+                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SubtleFillColorSecondaryBrush}" />
+                            <Setter TargetName="SelectionBar" Property="Visibility" Value="Visible" />
+                        </Trigger>
+                        <MultiTrigger>
+                            <MultiTrigger.Conditions>
+                                <Condition Property="IsSelected" Value="True" />
+                                <Condition Property="IsMouseOver" Value="True" />
+                            </MultiTrigger.Conditions>
+                            <Setter TargetName="Fill" Property="Background" Value="{DynamicResource SubtleFillColorTertiaryBrush}" />
+                        </MultiTrigger>
+                    </ControlTemplate.Triggers>
+                </ControlTemplate>
+            </Setter.Value>
+        </Setter>
     </Style>
 </ResourceDictionary>

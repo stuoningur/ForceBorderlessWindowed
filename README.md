@@ -23,7 +23,7 @@ The exe isn't code-signed yet, so Windows SmartScreen will probably warn you the
 
 1. Start the game in windowed mode.
 2. Open Force Borderless Windowed (it lives in the notification area) and go to the Games tab.
-3. Add the game from the list of running programs, or pick its exe with Browse.
+3. Click Add and pick the game's window from the running programs (there is a search box), or choose its exe file.
 4. Choose where the window should go and select Save & apply.
 
 There is also a global hotkey that adds whatever program you're using to the list right away. It's off until you set it on the Hotkeys tab.

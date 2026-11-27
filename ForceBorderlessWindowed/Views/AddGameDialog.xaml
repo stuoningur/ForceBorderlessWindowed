@@ -1,0 +1,152 @@
+﻿<Window x:Class="ForceBorderlessWindowed.Views.AddGameDialog"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:ForceBorderlessWindowed.ViewModels"
+        xmlns:controls="clr-namespace:ForceBorderlessWindowed.Controls"
+        xmlns:views="clr-namespace:ForceBorderlessWindowed.Views"
+        xmlns:res="clr-namespace:ForceBorderlessWindowed.Resources"
+        mc:Ignorable="d"
+        d:DataContext="{d:DesignInstance Type=vm:AddGameDialogViewModel}"
+        Title="{x:Static res:Strings.AppName}"
+        Width="600"
+        SizeToContent="Height"
+        ResizeMode="NoResize"
+        ShowInTaskbar="False"
+        WindowStartupLocation="CenterOwner">
+    <!-- Laid out like MessageDialog (a WinUI ContentDialog): content on the window background, buttons in a footer.
+         Rows in reading order: title, search, list, then the buttons; tab order follows. -->
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel Margin="24,20,24,24">
+            <TextBlock Style="{DynamicResource SubtitleTextBlockStyle}" Text="{x:Static res:Strings.Games_Empty_Add}" />
+            <TextBlock Margin="0,8,0,0" TextWrapping="Wrap" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                       Text="{x:Static res:Strings.Games_Add_Intro}" />
+
+            <!-- Search: filters as you type. Down moves into the list, Enter adds the selected window (OnSearchKeyDown). -->
+            <controls:FieldLabel Margin="0,16,0,0" Content="{x:Static res:Strings.Games_Add_Search}"
+                                 Target="{Binding ElementName=SearchBox}" />
+            <TextBox x:Name="SearchBox" Margin="0,4,0,0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     PreviewKeyDown="OnSearchKeyDown" />
+
+            <!-- The running windows. Fixed height: the dialog doesn't jump while filtering. -->
+            <Grid Height="320" Margin="0,12,0,0">
+                <Border Style="{StaticResource CardStyle}" />
+                <ListBox x:Name="ProgramList"
+                         ItemsSource="{Binding Items}"
+                         SelectedItem="{Binding SelectedItem}"
+                         Background="Transparent" BorderThickness="0" Padding="0,4"
+                         ScrollViewer.HorizontalScrollBarVisibility="Disabled"
+                         AutomationProperties.Name="{x:Static res:Strings.Games_Add_RunningHeader}"
+                         MouseDoubleClick="OnListDoubleClick">
+                    <ListBox.ItemContainerStyle>
+                        <Style TargetType="ListBoxItem" BasedOn="{StaticResource SubtleListBoxItemStyle}">
+                            <Setter Property="AutomationProperties.Name" Value="{Binding AccessibleName}" />
+                        </Style>
+                    </ListBox.ItemContainerStyle>
+                    <ListBox.ItemTemplate>
+                        <DataTemplate DataType="{x:Type vm:RunningProgramItem}">
+                            <Grid Margin="0,2">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition Width="Auto" />
+                                </Grid.ColumnDefinitions>
+
+                                <Grid x:Name="IconArea" Width="24" Height="24" Margin="0,0,12,0" VerticalAlignment="Center">
+                                    <Border Style="{StaticResource IconPlaceholderStyle}">
+                                        <controls:FontIcon Style="{StaticResource IconTextStyle}" HorizontalAlignment="Center"
+                                                           FontSize="14" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                                           Text="&#xE737;" />   <!-- Window -->
+                                    </Border>
+                                    <controls:DecorativeImage Source="{Binding Icon}" Width="24" Height="24"
+                                                              RenderOptions.BitmapScalingMode="HighQuality" />
+                                </Grid>
+
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <!-- The full title in the tooltip: a browser tab title can be very long -->
+                                    <TextBlock x:Name="TitleText" Text="{Binding Program.WindowTitle}"
+                                               TextTrimming="CharacterEllipsis" ToolTip="{Binding Program.WindowTitle}" />
+                                    <TextBlock FontSize="12" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding Details}" />
+                                </StackPanel>
+
+                                <!-- Already in the list: which game takes it, with a checkmark -->
+                                <StackPanel Grid.Column="2" Margin="12,0,0,0" Orientation="Horizontal" VerticalAlignment="Center"
+                                            Visibility="{Binding IsAlreadyAdded, Converter={StaticResource BoolToVisibility}}">
+                                    <controls:FontIcon Margin="0,0,6,0" Style="{StaticResource IconTextStyle}" FontSize="12"
+                                                       Foreground="{DynamicResource TextFillColorSecondaryBrush}" Text="&#xE73E;" />
+                                    <TextBlock MaxWidth="200" FontSize="12" TextTrimming="CharacterEllipsis"
+                                               Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                                               Text="{Binding UsedByText}" />
+                                </StackPanel>
+                            </Grid>
+                            <DataTemplate.Triggers>
+                                <DataTrigger Binding="{Binding IsAlreadyAdded}" Value="True">
+                                    <Setter TargetName="IconArea" Property="Opacity" Value="0.45" />
+                                    <Setter TargetName="TitleText" Property="Foreground" Value="{DynamicResource TextFillColorSecondaryBrush}" />
+                                </DataTrigger>
+                            </DataTemplate.Triggers>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+
+                <!-- Nothing runs, or nothing matches the search -->
+                <TextBlock HorizontalAlignment="Center" VerticalAlignment="Center" Margin="24" TextWrapping="Wrap"
+                           TextAlignment="Center" Foreground="{DynamicResource TextFillColorSecondaryBrush}"
+                           Text="{Binding EmptyText}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding HasItems}" Value="False">
+                                    <Setter Property="Visibility" Value="Visible" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+            </Grid>
+        </StackPanel>
+
+        <!-- Footer: the other ways to add a game on the left, the dialog's own buttons on the right -->
+        <Border Grid.Row="1" Padding="24"
+                BorderThickness="0,1,0,0"
+                BorderBrush="{DynamicResource DividerStrokeColorDefaultBrush}"
+                Background="{DynamicResource LayerFillColorDefaultBrush}">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="*" />
+                    <ColumnDefinition Width="Auto" />
+                    <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Button MinWidth="88" Click="OnFromFileClick"
+                        AutomationProperties.Name="{Binding Source={x:Static res:Strings.Games_AddFromFile}, Converter={x:Static views:AccessKeyConverter.Instance}}">
+                    <AccessText Text="{x:Static res:Strings.Games_AddFromFile}" />
+                </Button>
+                <Button Grid.Column="1" Margin="8,0,0,0" MinWidth="88" Click="OnManuallyClick"
+                        AutomationProperties.Name="{Binding Source={x:Static res:Strings.Games_AddManually}, Converter={x:Static views:AccessKeyConverter.Instance}}">
+                    <AccessText Text="{x:Static res:Strings.Games_AddManually}" />
+                </Button>
+                <!-- AccessText: the Fluent accent button template shows a plain "_" literally -->
+                <Button Grid.Column="3" Margin="16,0,0,0" MinWidth="96" IsDefault="True"
+                        Style="{DynamicResource AccentButtonStyle}"
+                        IsEnabled="{Binding CanAdd}" Click="OnAddClick"
+                        AutomationProperties.Name="{Binding Source={x:Static res:Strings.Games_Add_Confirm}, Converter={x:Static views:AccessKeyConverter.Instance}}">
+                    <AccessText Text="{x:Static res:Strings.Games_Add_Confirm}" />
+                </Button>
+                <Button Grid.Column="4" Margin="8,0,0,0" MinWidth="96" IsCancel="True"
+                        Content="{x:Static res:Strings.Common_Cancel}" />
+            </Grid>
+        </Border>
+    </Grid>
+</Window>

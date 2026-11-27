@@ -946,4 +946,22 @@
   <data name="Placement_Preset_RightHalf" xml:space="preserve">
     <value>Rechte Hälfte</value>
   </data>
+  <data name="Games_Add_Intro" xml:space="preserve">
+    <value>Starte das Spiel und wähle dann sein Fenster. Läuft es nicht, wähle seine Programmdatei oder gib den Dateinamen ein.</value>
+  </data>
+  <data name="Games_Add_Search" xml:space="preserve">
+    <value>Nach Fenstertitel oder Dateinamen _suchen</value>
+  </data>
+  <data name="Games_Add_Confirm" xml:space="preserve">
+    <value>_Hinzufügen</value>
+  </data>
+  <data name="Games_Add_OnDisplay" xml:space="preserve">
+    <value>Bildschirm {0}: {1}</value>
+  </data>
+  <data name="Games_Add_UsedBy" xml:space="preserve">
+    <value>Bereits hinzugefügt: {0}</value>
+  </data>
+  <data name="Games_Add_NoMatch" xml:space="preserve">
+    <value>Kein laufendes Fenster passt zu „{0}“.</value>
+  </data>
 </root>

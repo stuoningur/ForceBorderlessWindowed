@@ -40,7 +40,7 @@ internal sealed class ProcessDiscoveryService : IProcessDiscoveryService
                 continue;
             }
 
-            programs.Add(new RunningProgram((int)processId, Path.GetFileName(path), GetWindowTitle(hwnd), path));
+            programs.Add(new RunningProgram((int)processId, Path.GetFileName(path), GetWindowTitle(hwnd), path, hwnd));
         }
 
         return [.. programs.OrderBy(p => p.WindowTitle, StringComparer.CurrentCultureIgnoreCase)];

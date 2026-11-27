@@ -58,7 +58,8 @@ public partial class SettingsViewModel : ObservableObject
         Games = new GamesViewModel(settings.Current.Games, General.DefaultPlacement, processDiscovery, statusProvider, icons,
             screenPreview, game => processDiscovery.FindGameWindows([game]) is [var window, ..]
                 ? new RunningGameWindow(display.GetMonitorForWindow(window.Handle), manipulator.GetClientSize(window.Handle))
-                : null);
+                : null,
+            display.GetMonitorForWindow);
         Hotkeys = new HotkeysViewModel(settings.Current.Hotkeys, hotkeys);
         Games.SetDetectionPaused(settings.Current.IsPaused);
         _savedGames = settings.Current.Games;

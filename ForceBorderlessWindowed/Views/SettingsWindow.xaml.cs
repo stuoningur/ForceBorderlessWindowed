@@ -3,13 +3,10 @@ using System.Windows;
 using System.Windows.Automation;
 using System.Windows.Automation.Peers;
 using System.Windows.Controls;
-using System.Windows.Controls.Primitives;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Threading;
-
-using CommunityToolkit.Mvvm.Input;
 
 using ForceBorderlessWindowed.Controls;
 using ForceBorderlessWindowed.Resources;
@@ -523,77 +520,29 @@ public partial class SettingsWindow : Window
     }
 
     /// <summary>
-    /// Builds the "Add" menu from the current running programs each time it opens.
-    /// Done in code because the menu mixes a dynamic list with fixed entries, which is clumsy in XAML.
-    /// All actions are still ViewModel commands/methods.
+    /// "Add a game": the running programs' windows to pick from, plus a file dialog or typing it in by hand.
+    /// The adding itself stays with the ViewModel.
     /// </summary>
     private async void OnAddGameClick(object sender, RoutedEventArgs e)
     {
-        // Up to date when the menu opens: a game started a moment ago should be in it
+        // Up to date when the dialog opens: a game started a moment ago should be in it. While it is open, the
+        // 3-second refresh keeps it current.
         var games = _viewModel.Games;
         await games.RefreshRunningAsync();
 
-        var menu = new ContextMenu
+        var (choice, item) = AddGameDialog.Show(this, games);
+        switch (choice)
         {
-            PlacementTarget = (UIElement)sender,
-            Placement = PlacementMode.Bottom,
-        };
-
-        // Same one-column item layout as the tray menu: program icons, the checkmark for programs that are
-        // already in the list, and the glyphs of the fixed entries all line up
-        menu.Resources.Add(typeof(MenuItem), FindResource("AlignedMenuItemStyle"));
-
-        // Section label, so the list of windows reads as one group and the fixed entries below stand out
-        menu.Items.Add(new MenuItem
-        {
-            Header = new TextBlock { Text = Strings.Games_Add_RunningHeader, FontSize = 12, FontWeight = FontWeights.SemiBold },
-            IsEnabled = false,
-        });
-
-        if (games.RunningPrograms.Count == 0)
-        {
-            menu.Items.Add(new MenuItem { Header = Strings.Games_NoRunningPrograms, IsEnabled = false });
+            case AddGameChoice.RunningProgram when item is not null:
+                games.AddRunningCommand.Execute(item);
+                break;
+            case AddGameChoice.FromFile:
+                AddFromFile();
+                break;
+            case AddGameChoice.Manually:
+                AddManually();
+                break;
         }
-
-        foreach (var item in games.RunningPrograms)
-        {
-            menu.Items.Add(new MenuItem
-            {
-                // A TextBlock, not the plain string: window titles may contain "_", which would become an access key.
-                // Width-limited: a browser tab title can be very long and would stretch the menu across the window,
-                // far away from the exe names. The full title is in the tooltip (and still in the screen reader name).
-                // Left-aligned: a stretched element with MaxWidth gets centered in a wider slot, and the text column is
-                // wider in rows with a short exe name (e.g. "fm.exe"), so those titles were indented.
-                Header = new TextBlock
-                {
-                    Text = item.Program.WindowTitle,
-                    MaxWidth = 320,
-                    HorizontalAlignment = HorizontalAlignment.Left,
-                    TextTrimming = TextTrimming.CharacterEllipsis,
-                    ToolTip = item.Program.WindowTitle,
-                },
-                InputGestureText = item.Program.ExecutableName,   // shown right-aligned, like a shortcut
-                IsChecked = item.IsAlreadyAdded,                  // ✓ for programs already in the list
-                Icon = item.IsAlreadyAdded || item.Icon is null
-                    ? null                                        // the checkmark takes the icon column
-                    : new Controls.DecorativeImage { Source = item.Icon, Width = 16, Height = 16 },
-                Command = games.AddRunningCommand,                // CanExecute disables the already added ones
-                CommandParameter = item,
-            });
-        }
-
-        menu.Items.Add(new Separator());
-        menu.Items.Add(new MenuItem { Header = Strings.Games_AddFromFile, Icon = Glyph("\uE8E5"), Command = new RelayCommand(AddFromFile) });   // OpenFile
-        menu.Items.Add(new MenuItem { Header = Strings.Games_AddManually, Icon = Glyph("\uE70F"), Command = new RelayCommand(AddManually) });   // Edit
-
-        menu.IsOpen = true;
-    }
-
-    private static Controls.FontIcon Glyph(string glyph)
-    {
-        var icon = new Controls.FontIcon { Text = glyph, HorizontalAlignment = HorizontalAlignment.Center };
-        icon.SetResourceReference(StyleProperty, "IconTextStyle");
-        return icon;
     }
 
     /// <summary>The exe name is the field that has to be filled in (the display name is optional): the focus goes there.</summary>
