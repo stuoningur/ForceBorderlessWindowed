@@ -84,14 +84,34 @@ internal sealed class WindowManipulator : IWindowManipulator
         }
 
         // What we asked for, not GetWindowRect: the move is asynchronous and may not have happened yet.
-        // long: same overflow guard as in MakeBorderless (an out-of-range position never gets this far, but stays safe)
-        var left = (int)Math.Clamp((long)monitor.Left + placement.OffsetX, int.MinValue, int.MaxValue);
-        var top = monitor.Top + placement.OffsetY;
+        // Same range check as MakeBorderless: a rectangle out of range never got applied, so there's no look of ours
+        if (ScreenBounds(placement, monitor) is not { } bounds)
+        {
+            return null;
+        }
+
         return new WindowLook
         {
             Style = (uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE) & ~LookIgnoredStyles,
-            Bounds = (left, top, left + placement.Width, top + placement.Height),
+            Bounds = bounds,
         };
+    }
+
+    /// <summary>
+    /// The placement in screen coordinates, or null if any edge is outside the int range Win32 takes. Computed as
+    /// long: settings are checked on load, but an int sum must never wrap around to a wrong position.
+    /// </summary>
+    internal static (int Left, int Top, int Right, int Bottom)? ScreenBounds(WindowRect placement, MonitorBounds monitor)
+    {
+        var left = (long)monitor.Left + placement.OffsetX;
+        var top = (long)monitor.Top + placement.OffsetY;
+        var right = left + placement.Width;
+        var bottom = top + placement.Height;
+
+        static bool InRange(long value) => value is >= int.MinValue and <= int.MaxValue;
+        return InRange(left) && InRange(top) && InRange(right) && InRange(bottom)
+            ? ((int)left, (int)top, (int)right, (int)bottom)
+            : null;
     }
 
     public bool GameSwitchedMode(nint windowHandle, WindowLook look)
@@ -144,17 +164,14 @@ internal sealed class WindowManipulator : IWindowManipulator
         var newStyle = style & ~FrameStyles;
         var newExStyle = exStyle & ~EdgeExStyles;
 
-        // Physical pixels: this app is PerMonitorV2 DPI aware, like MonitorBounds and WindowPlacement.
-        // Computed as long: settings are checked on load, but an int sum must never wrap around to a wrong position.
-        var left = (long)monitor.Left + placement.OffsetX;
-        if (left is < int.MinValue or > int.MaxValue)
+        // Physical pixels: this app is PerMonitorV2 DPI aware, like MonitorBounds and WindowPlacement
+        if (ScreenBounds(placement, monitor) is not { } bounds)
         {
             error = new WindowChangeError("position out of range", 0);
             return WindowChangeResult.Failed;   // nothing touched yet
         }
 
-        var x = (int)left;
-        var y = monitor.Top + placement.OffsetY;
+        var (x, y, _, _) = bounds;
         var isMaximized = PInvoke.IsZoomed(hwnd);
 
         // Idempotent: our own SetWindowPos below triggers a "location changed" event too. Ending up here
