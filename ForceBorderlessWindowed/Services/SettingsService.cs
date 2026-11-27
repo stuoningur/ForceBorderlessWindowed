@@ -80,6 +80,10 @@ internal sealed partial class SettingsService : ISettingsService
             using (var stream = new FileStream(tempPath, FileMode.CreateNew, FileAccess.Write))
             {
                 JsonSerializer.Serialize(stream, settings, SettingsJsonContext.Default.AppSettings);
+
+                // On disk before the move: otherwise a power cut right after it can leave an empty settings.json
+                // under the new name (the rename is journaled, the content may not be written yet)
+                stream.Flush(flushToDisk: true);
             }
 
             File.Move(tempPath, _filePath, overwrite: true);
