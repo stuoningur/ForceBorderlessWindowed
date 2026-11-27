@@ -375,12 +375,8 @@ internal sealed partial class HotkeyService(
             return null;
         }
 
-        // A game's dialog or launcher popup: use the window that owns it
-        var window = PInvoke.GetAncestor(foreground, GET_ANCESTOR_FLAGS.GA_ROOTOWNER);
-        if (window.IsNull)
-        {
-            window = foreground;
-        }
+        // A game's dialog or launcher popup: use the window that owns it, but never a hidden owner window
+        var window = WindowQueries.GetOwningMainWindow(foreground);
 
         var processId = WindowQueries.GetProcessId(window);
         if (processId == 0 || processId == Environment.ProcessId)

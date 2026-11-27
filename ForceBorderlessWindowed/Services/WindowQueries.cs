@@ -23,7 +23,7 @@ internal static class WindowQueries
     }
 
     /// <summary>
-    /// Roughly "would this window show up in the taskbar / Alt+Tab": visible, not owned by another window,
+    /// Roughly "would this window show up in the taskbar / Alt+Tab": visible, not owned by another visible window,
     /// not a tool window, not cloaked. Without <paramref name="requireTitle"/> untitled windows count too,
     /// because some games never set a window title.
     /// </summary>
@@ -34,8 +34,10 @@ internal static class WindowQueries
             return false;
         }
 
-        // Dialogs and popups belong to another window
-        if (!PInvoke.GetWindow(hwnd, GET_WINDOW_CMD.GW_OWNER).IsNull)
+        // Dialogs and popups belong to another window. Not when that owner is hidden: some programs (Delphi/VCL,
+        // some engines) give their real main window a hidden owner window, and then it's the main window after all.
+        var owner = PInvoke.GetWindow(hwnd, GET_WINDOW_CMD.GW_OWNER);
+        if (!owner.IsNull && PInvoke.IsWindowVisible(owner))
         {
             return false;
         }
@@ -51,6 +53,31 @@ internal static class WindowQueries
         int cloaked = 0;
         var result = PInvoke.DwmGetWindowAttribute(hwnd, DWMWINDOWATTRIBUTE.DWMWA_CLOAKED, &cloaked, sizeof(int));
         return result.Failed || cloaked == 0;
+    }
+
+    /// <summary>
+    /// The main window a window belongs to: its top-level window, then up its owners (a dialog or launcher popup
+    /// leads to the window that owns it) as long as they are visible. A hidden owner is never the answer: some
+    /// programs own their real main window by an invisible helper window.
+    /// </summary>
+    public static HWND GetOwningMainWindow(HWND hwnd)
+    {
+        var root = PInvoke.GetAncestor(hwnd, GET_ANCESTOR_FLAGS.GA_ROOT);
+        var current = root.IsNull ? hwnd : root;
+
+        // Bounded: an owner chain is short, and this can't loop forever on a broken one
+        for (var depth = 0; depth < 32; depth++)
+        {
+            var owner = PInvoke.GetWindow(current, GET_WINDOW_CMD.GW_OWNER);
+            if (owner.IsNull || !PInvoke.IsWindowVisible(owner))
+            {
+                break;
+            }
+
+            current = owner;
+        }
+
+        return current;
     }
 
     /// <summary>True for top-level windows, false for child windows (controls inside a window).</summary>
