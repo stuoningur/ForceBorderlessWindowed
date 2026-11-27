@@ -75,7 +75,7 @@ internal sealed class WindowManipulator : IWindowManipulator
     // State bits plus "disabled" (a game disables its window while it shows a dialog): none of them is a change of mode
     private const uint LookIgnoredStyles = (uint)(StateStyles | WINDOW_STYLE.WS_DISABLED);
 
-    public WindowLook? CaptureLook(nint windowHandle, WindowPlacement placement, MonitorBounds monitor)
+    public WindowLook? CaptureLook(nint windowHandle, WindowRect placement, MonitorBounds monitor)
     {
         var hwnd = new HWND(windowHandle);
         if (!PInvoke.IsWindow(hwnd))
@@ -86,7 +86,7 @@ internal sealed class WindowManipulator : IWindowManipulator
         // What we asked for, not GetWindowRect: the move is asynchronous and may not have happened yet.
         // long: same overflow guard as in MakeBorderless (an out-of-range position never gets this far, but stays safe)
         var left = (int)Math.Clamp((long)monitor.Left + placement.OffsetX, int.MinValue, int.MaxValue);
-        var top = PlacementCalculator.GetTop(placement, monitor);
+        var top = monitor.Top + placement.OffsetY;
         return new WindowLook
         {
             Style = (uint)PInvoke.GetWindowLong(hwnd, WINDOW_LONG_PTR_INDEX.GWL_STYLE) & ~LookIgnoredStyles,
@@ -128,7 +128,7 @@ internal sealed class WindowManipulator : IWindowManipulator
             && rect.right >= info.rcMonitor.right && rect.bottom >= info.rcMonitor.bottom;
     }
 
-    public WindowChangeResult MakeBorderless(nint windowHandle, WindowPlacement placement, MonitorBounds monitor, out bool modified)
+    public WindowChangeResult MakeBorderless(nint windowHandle, WindowRect placement, MonitorBounds monitor, out bool modified)
     {
         modified = false;
         var hwnd = new HWND(windowHandle);
@@ -152,7 +152,7 @@ internal sealed class WindowManipulator : IWindowManipulator
         }
 
         var x = (int)left;
-        var y = PlacementCalculator.GetTop(placement, monitor);
+        var y = monitor.Top + placement.OffsetY;
         var isMaximized = PInvoke.IsZoomed(hwnd);
 
         // Idempotent: our own SetWindowPos below triggers a "location changed" event too. Ending up here

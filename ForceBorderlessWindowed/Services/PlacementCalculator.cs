@@ -7,7 +7,7 @@ public static class PlacementCalculator
     /// <summary>
     /// The aspect ratio at full monitor height, centered horizontally.
     /// Monitors that aren't wider than that ratio (e.g. 16:10 for 16:9) get the full monitor, or with
-    /// <paramref name="keepAspectRatio"/> the ratio at full width (centered vertically by <see cref="GetTop"/>).
+    /// <paramref name="keepAspectRatio"/> the ratio at full width (placed vertically by <see cref="Position"/>).
     /// </summary>
     public static WindowPlacement CalculateAutomatic(MonitorBounds monitor, AspectRatio ratio, bool keepAspectRatio = false)
     {
@@ -65,33 +65,55 @@ public static class PlacementCalculator
     /// For <see cref="PlacementMode.GameSize"/>: the inner size of the game's window right now. Without it (unknown),
     /// that mode falls back to the automatic size.
     /// </param>
-    public static WindowPlacement Resolve(
+    public static WindowRect Resolve(
         PlacementSettings? gamePlacement, PlacementSettings defaultPlacement, MonitorBounds monitor,
         (int Width, int Height)? gameSize = null)
     {
         var effective = gamePlacement ?? defaultPlacement;
-        return effective switch
+        var size = effective switch
         {
             { Mode: PlacementMode.Custom, Custom: { } custom } => FitToMonitor(custom, monitor),
-            { Mode: PlacementMode.GameSize } when gameSize is { Width: > 0, Height: > 0 } size => CenterOnMonitor(size, monitor),
+            { Mode: PlacementMode.GameSize } when gameSize is { Width: > 0, Height: > 0 } game => CenterOnMonitor(game, monitor),
             _ => CalculateAutomatic(monitor, effective.AspectRatio, effective.KeepAspectRatio),
         };
+
+        return Position(size, effective.EffectiveHorizontal(), effective.Vertical, monitor);
     }
 
-    /// <summary>A window of this size, centered (horizontally here, vertically by <see cref="GetTop"/>), shrunk to fit.</summary>
+    /// <summary>
+    /// Puts a window of this size at its place on the monitor. <see cref="HorizontalAnchor.Offset"/> takes the
+    /// placement's own offset, the anchors put it at an edge or the center of the monitor. Never above or left of
+    /// the monitor, even for a size that wasn't passed through <see cref="FitToMonitor"/>.
+    /// </summary>
+    public static WindowRect Position(
+        WindowPlacement size, HorizontalAnchor horizontal, VerticalAnchor vertical, MonitorBounds monitor)
+    {
+        var freeX = Math.Max(0, monitor.Width - size.Width);
+        var freeY = Math.Max(0, monitor.Height - size.Height);
+        var x = horizontal switch
+        {
+            HorizontalAnchor.Left => 0,
+            HorizontalAnchor.Right => freeX,
+            HorizontalAnchor.Offset => size.OffsetX,
+            _ => freeX / 2,
+        };
+        var y = vertical switch
+        {
+            VerticalAnchor.Top => 0,
+            VerticalAnchor.Bottom => freeY,
+            _ => freeY / 2,
+        };
+
+        return new WindowRect(size.Width, size.Height, x, y);
+    }
+
+    /// <summary>A window of this size, centered horizontally (see <see cref="Position"/> for its real place), shrunk to fit.</summary>
     public static WindowPlacement CenterOnMonitor((int Width, int Height) size, MonitorBounds monitor)
     {
         var width = Math.Min(size.Width, monitor.Width);
         var height = Math.Min(size.Height, monitor.Height);
         return new WindowPlacement(width, height, (monitor.Width - width) / 2);
     }
-
-    /// <summary>
-    /// Top edge of the window: centered vertically. A window as tall as the monitor (the usual case) starts at its top.
-    /// Never above the monitor, even for a placement that wasn't passed through <see cref="FitToMonitor"/>.
-    /// </summary>
-    public static int GetTop(WindowPlacement placement, MonitorBounds monitor) =>
-        monitor.Top + (Math.Max(0, monitor.Height - placement.Height) / 2);
 
     /// <summary>
     /// Shrinks and moves a custom placement so it stays on the monitor. The editor already refuses values that

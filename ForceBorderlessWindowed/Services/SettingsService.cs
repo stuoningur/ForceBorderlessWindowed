@@ -330,6 +330,25 @@ internal sealed partial class SettingsService : ISettingsService
             result = result with { AspectRatio = AspectRatio.Widescreen16x9 };
         }
 
+        if (result.Horizontal is { } horizontal && !Enum.IsDefined(horizontal))
+        {
+            LogRepaired($"{owner}: unknown horizontal position {horizontal}", "the mode's usual position used");
+            result = result with { Horizontal = null };
+        }
+
+        // Files of older versions have no position: stored as what applies (Custom: its offset, the rest: centered),
+        // as the editor saves it. Otherwise the settings window would see a change as soon as it opens. Not a repair.
+        if (result.Horizontal != result.EffectiveHorizontal())
+        {
+            result = result with { Horizontal = result.EffectiveHorizontal() };
+        }
+
+        if (!Enum.IsDefined(result.Vertical))
+        {
+            LogRepaired($"{owner}: unknown vertical position {result.Vertical}", "centered");
+            result = result with { Vertical = VerticalAnchor.Center };
+        }
+
         if (!Enum.IsDefined(result.Display)
             || (result.Display == DisplayTarget.Specific && string.IsNullOrWhiteSpace(result.DisplayId)))
         {

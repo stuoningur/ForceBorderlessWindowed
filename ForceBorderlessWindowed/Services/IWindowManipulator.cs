@@ -78,19 +78,19 @@ public interface IWindowManipulator
 
     /// <summary>
     /// Removes title bar and borders and moves the window to <paramref name="placement"/> on
-    /// <paramref name="monitor"/> (top-aligned). Does nothing if it's already there.
+    /// <paramref name="monitor"/>. Does nothing if it's already there.
     /// </summary>
     /// <param name="modified">
     /// True if the window was changed at all, even when a later step failed (e.g. un-maximized and styles
     /// changed, but moving it was refused). Such a half-changed window still needs restoring.
     /// </param>
-    WindowChangeResult MakeBorderless(nint windowHandle, WindowPlacement placement, MonitorBounds monitor, out bool modified);
+    WindowChangeResult MakeBorderless(nint windowHandle, WindowRect placement, MonitorBounds monitor, out bool modified);
 
     /// <summary>
     /// The window's look now (right after our change to <paramref name="placement"/> on <paramref name="monitor"/>),
     /// to check later whether the game switched it to a mode of its own. null if gone.
     /// </summary>
-    WindowLook? CaptureLook(nint windowHandle, WindowPlacement placement, MonitorBounds monitor);
+    WindowLook? CaptureLook(nint windowHandle, WindowRect placement, MonitorBounds monitor);
 
     /// <summary>
     /// True if the game has switched the window to its own fullscreen or borderless mode since <paramref name="look"/>:

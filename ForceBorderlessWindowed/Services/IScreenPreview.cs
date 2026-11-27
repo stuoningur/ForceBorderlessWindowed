@@ -13,5 +13,5 @@ public interface IScreenPreview
     /// that is still showing. UI thread only.
     /// </summary>
     /// <param name="label">Shown inside the outline, e.g. "2560 × 1440".</param>
-    void Show(MonitorBounds monitor, WindowPlacement placement, string label);
+    void Show(MonitorBounds monitor, WindowRect placement, string label);
 }

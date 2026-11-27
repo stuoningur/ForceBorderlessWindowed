@@ -1,4 +1,4 @@
-<UserControl x:Class="ForceBorderlessWindowed.Views.PlacementEditor"
+﻿<UserControl x:Class="ForceBorderlessWindowed.Views.PlacementEditor"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
@@ -16,6 +16,7 @@
                                    MonitorWidth="{Binding Preview.MonitorWidth, FallbackValue=0}"
                                    MonitorHeight="{Binding Preview.MonitorHeight, FallbackValue=0}"
                                    WindowX="{Binding Preview.X, FallbackValue=0}"
+                                   WindowY="{Binding Preview.Y, FallbackValue=0}"
                                    WindowWidth="{Binding Preview.Width, FallbackValue=0}"
                                    WindowHeight="{Binding Preview.Height, FallbackValue=0}"
                                    IsOverflow="{Binding Preview.Exceeds, FallbackValue=False}"
@@ -114,7 +115,6 @@
                     <MultiBinding StringFormat="{x:Static res:Strings.Placement_AutomaticPreview}">
                         <Binding Path="AutomaticPlacement.Width" />
                         <Binding Path="AutomaticPlacement.Height" />
-                        <Binding Path="AutomaticPlacement.OffsetX" />
                         <!-- Which display, also while "Use default" hides the display choice above -->
                         <Binding Path="SelectedDisplay.ShortLabel" FallbackValue="" />
                     </MultiBinding>
@@ -169,39 +169,6 @@
                     </DockPanel>
                     <controls:FieldError Text="{Binding HeightError}" Target="{Binding ElementName=HeightBox}" />
                 </StackPanel>
-
-                <!-- Wider than the others for the Left/Center/Right buttons: the field itself keeps their width,
-                     and the error below wraps within the row's width instead of widening it -->
-                <StackPanel Style="{StaticResource NumberFieldStyle}" Width="Auto">
-                    <controls:FieldLabel Content="{x:Static res:Strings.Placement_OffsetX}"
-                                         Target="{Binding ElementName=OffsetBox}" />
-                    <StackPanel x:Name="OffsetRow" Margin="0,4,0,0" Orientation="Horizontal">
-                        <DockPanel Width="140">
-                            <TextBlock Style="{StaticResource UnitTextStyle}" />
-                            <TextBox x:Name="OffsetBox" Text="{Binding OffsetXText, UpdateSourceTrigger=PropertyChanged}" />
-                        </DockPanel>
-                        <!-- Same gap as between the fields, so they read as actions of the row, not part of
-                             "px"; a small gap between the three keeps them one group. Stretch: the button style is
-                             shorter than a text box and would sit centered. No access keys: the letters are taken. -->
-                        <Button Margin="16,0,0,0" MinWidth="64" VerticalAlignment="Stretch" Command="{Binding AlignXCommand}"
-                                CommandParameter="{x:Static vm:OffsetAlignment.Left}"
-                                Content="{x:Static res:Strings.Placement_AlignLeft}"
-                                ToolTip="{x:Static res:Strings.Placement_AlignLeft_Tooltip}"
-                                AutomationProperties.HelpText="{x:Static res:Strings.Placement_AlignLeft_Tooltip}" />
-                        <Button Margin="4,0,0,0" MinWidth="64" VerticalAlignment="Stretch" Command="{Binding AlignXCommand}"
-                                CommandParameter="{x:Static vm:OffsetAlignment.Center}"
-                                Content="{x:Static res:Strings.Placement_CenterX}"
-                                ToolTip="{x:Static res:Strings.Placement_CenterX_Tooltip}"
-                                AutomationProperties.HelpText="{x:Static res:Strings.Placement_CenterX_Tooltip}" />
-                        <Button Margin="4,0,0,0" MinWidth="64" VerticalAlignment="Stretch" Command="{Binding AlignXCommand}"
-                                CommandParameter="{x:Static vm:OffsetAlignment.Right}"
-                                Content="{x:Static res:Strings.Placement_AlignRight}"
-                                ToolTip="{x:Static res:Strings.Placement_AlignRight_Tooltip}"
-                                AutomationProperties.HelpText="{x:Static res:Strings.Placement_AlignRight_Tooltip}" />
-                    </StackPanel>
-                    <controls:FieldError Width="{Binding ActualWidth, ElementName=OffsetRow}"
-                                         Text="{Binding OffsetXError}" Target="{Binding ElementName=OffsetBox}" />
-                </StackPanel>
             </WrapPanel>
             <!-- Saved values that are too large for this display: they still save, the window is shrunk to fit -->
             <controls:FieldError IsWarning="True" Text="{Binding FitWarning}" />
@@ -213,6 +180,55 @@
                     ToolTip="{x:Static res:Strings.Placement_FitToDisplay_Tooltip}"
                     AutomationProperties.HelpText="{x:Static res:Strings.Placement_FitToDisplay_Tooltip}"
                     Visibility="{Binding CanFitToDisplay, Converter={StaticResource BoolToVisibility}}" />
+        </StackPanel>
+
+        <!-- Where the window sits on the display, for every mode (with "Use default" the default's applies).
+             Saved as a side or the center, so it follows the display; only Custom offers an exact offset.
+             Each group of RadioButtons has its own panel: that makes them separate groups. -->
+        <StackPanel Margin="0,16,0,0"
+                    Visibility="{Binding ShowDisplaySelection, Converter={StaticResource BoolToVisibility}}">
+            <TextBlock x:Name="HorizontalLabel" Text="{x:Static res:Strings.Placement_Position_Horizontal}" />
+            <WrapPanel Margin="0,4,0,8" AutomationProperties.LabeledBy="{Binding ElementName=HorizontalLabel}">
+                <WrapPanel.Resources>
+                    <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                        <Setter Property="Margin" Value="0,0,24,4" />
+                        <Setter Property="MinWidth" Value="0" />
+                    </Style>
+                </WrapPanel.Resources>
+                <RadioButton Content="{x:Static res:Strings.Placement_Anchor_Left}" IsChecked="{Binding IsAnchorLeft}" />
+                <RadioButton Content="{x:Static res:Strings.Placement_Anchor_Center}" IsChecked="{Binding IsAnchorCenterX}" />
+                <RadioButton Content="{x:Static res:Strings.Placement_Anchor_Right}" IsChecked="{Binding IsAnchorRight}" />
+                <RadioButton Content="{x:Static res:Strings.Placement_Anchor_Offset}" IsChecked="{Binding IsAnchorOffset}"
+                             ToolTip="{x:Static res:Strings.Placement_Anchor_Offset_Tooltip}"
+                             AutomationProperties.HelpText="{x:Static res:Strings.Placement_Anchor_Offset_Tooltip}"
+                             Visibility="{Binding IsCustom, Converter={StaticResource BoolToVisibility}}" />
+            </WrapPanel>
+
+            <!-- The number for "Exact offset", right below the choice (Custom only; the anchors need no number) -->
+            <StackPanel Width="140" Margin="0,0,0,8" HorizontalAlignment="Left"
+                        Visibility="{Binding ShowOffsetX, Converter={StaticResource BoolToVisibility}}">
+                <controls:FieldLabel Content="{x:Static res:Strings.Placement_OffsetX}"
+                                     Target="{Binding ElementName=OffsetBox}" />
+                <DockPanel Margin="0,4,0,0">
+                    <TextBlock DockPanel.Dock="Right" Margin="6,0,0,0" VerticalAlignment="Center"
+                               Style="{StaticResource SecondaryTextStyle}" Text="px" />
+                    <TextBox x:Name="OffsetBox" Text="{Binding OffsetXText, UpdateSourceTrigger=PropertyChanged}" />
+                </DockPanel>
+                <controls:FieldError Text="{Binding OffsetXError}" Target="{Binding ElementName=OffsetBox}" />
+            </StackPanel>
+
+            <TextBlock x:Name="VerticalLabel" Text="{x:Static res:Strings.Placement_Position_Vertical}" />
+            <WrapPanel Margin="0,4,0,0" AutomationProperties.LabeledBy="{Binding ElementName=VerticalLabel}">
+                <WrapPanel.Resources>
+                    <Style TargetType="RadioButton" BasedOn="{StaticResource {x:Type RadioButton}}">
+                        <Setter Property="Margin" Value="0,0,24,4" />
+                        <Setter Property="MinWidth" Value="0" />
+                    </Style>
+                </WrapPanel.Resources>
+                <RadioButton Content="{x:Static res:Strings.Placement_Anchor_Top}" IsChecked="{Binding IsAnchorTop}" />
+                <RadioButton Content="{x:Static res:Strings.Placement_Anchor_Center}" IsChecked="{Binding IsAnchorCenterY}" />
+                <RadioButton Content="{x:Static res:Strings.Placement_Anchor_Bottom}" IsChecked="{Binding IsAnchorBottom}" />
+            </WrapPanel>
         </StackPanel>
 
     </StackPanel>

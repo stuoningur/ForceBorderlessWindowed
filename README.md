@@ -2,7 +2,7 @@
 
 A small Windows tray app that makes games run in a borderless window, for games that only offer fullscreen or a normal window with a frame.
 
-You add a game once. From then on, whenever it runs, the app removes the window frame and puts the window where you want it: centered at full height, at a size and position you choose, or at the game's own size. When you close the app or pause it, the windows get their frame back.
+You add a game once. From then on, whenever it runs, the app removes the window frame and puts the window where you want it: at full height in the aspect ratio you pick, at a size you choose, or at the game's own size, on the left, in the center or on the right of the display. When you close the app or pause it, the windows get their frame back.
 
 It works with any program that has a normal window. It can't do anything for games that only run in exclusive fullscreen; start those in windowed mode first.
 
@@ -30,7 +30,7 @@ There is also a global hotkey that adds whatever program you're using to the lis
 
 ## What it can do
 
-- Placement per game: centered at full height (optionally keeping the aspect ratio), a custom size and position, or the game's own size, centered. Works on any display, including "the display the game is on".
+- Placement per game: full height in an aspect ratio (optionally keeping it on narrower displays), a custom size, or the game's own size. Left, center or right and top, center or bottom of the display, or an exact offset for custom sizes. Works on any display, including "the display the game is on".
 - Optional, while the game is in the foreground: keep the mouse inside the game window, hide the taskbar, cover the rest of the display in black.
 - Several games sharing one exe (`javaw.exe`, emulators): match by window title or full path.
 - Pause from the tray menu or a hotkey; windows get their frame back until you resume.

@@ -49,6 +49,26 @@ public enum DisplayTarget
     Specific,
 }
 
+/// <summary>Where the window sits horizontally on its display. Follows the display: no pixel value is saved for it.</summary>
+public enum HorizontalAnchor
+{
+    Center,
+    Left,
+    Right,
+
+    /// <summary>At <see cref="WindowPlacement.OffsetX"/> from the left edge; only for <see cref="PlacementMode.Custom"/>.</summary>
+    Offset,
+}
+
+/// <summary>Where the window sits vertically on its display.</summary>
+public enum VerticalAnchor
+{
+    /// <summary>The default (also for settings files from older versions).</summary>
+    Center,
+    Top,
+    Bottom,
+}
+
 public sealed record PlacementSettings
 {
     public PlacementMode Mode { get; init; } = PlacementMode.Automatic;
@@ -58,13 +78,34 @@ public sealed record PlacementSettings
 
     /// <summary>
     /// For <see cref="PlacementMode.Automatic"/> on a display that is narrower than the aspect ratio (e.g. 16:9 on
-    /// 16:10): keep the ratio at full width, centered vertically ("bars top and bottom"), instead of filling the
+    /// 16:10): keep the ratio at full width (by default centered vertically, "bars top and bottom"), instead of filling the
     /// whole display. Off by default (and in settings of older versions): the whole display, as before.
     /// </summary>
     public bool KeepAspectRatio { get; init; }
 
     /// <summary>Only used when <see cref="Mode"/> is <see cref="PlacementMode.Custom"/>.</summary>
     public WindowPlacement? Custom { get; init; }
+
+    /// <summary>
+    /// Horizontal position, for every mode. null in files of older versions, which had no choice: Custom used its
+    /// offset, the others were centered (see <see cref="EffectiveHorizontal"/>).
+    /// </summary>
+    public HorizontalAnchor? Horizontal { get; init; }
+
+    /// <summary>Vertical position, for every mode. Centered by default, as in older versions.</summary>
+    public VerticalAnchor Vertical { get; init; }
+
+    /// <summary>
+    /// The horizontal position that applies: <see cref="Horizontal"/>, or what older versions did without it.
+    /// <see cref="HorizontalAnchor.Offset"/> only exists for Custom (the other modes have no offset): centered there.
+    /// A method, not a property: the JSON serializer would otherwise write it into settings.json.
+    /// </summary>
+    public HorizontalAnchor EffectiveHorizontal() => Horizontal switch
+    {
+        null => Mode == PlacementMode.Custom ? HorizontalAnchor.Offset : HorizontalAnchor.Center,
+        HorizontalAnchor.Offset when Mode != PlacementMode.Custom => HorizontalAnchor.Center,
+        { } anchor => anchor,
+    };
 
     public DisplayTarget Display { get; init; }
 
@@ -79,9 +120,9 @@ public sealed record PlacementSettings
 }
 
 /// <summary>
-/// Size and horizontal offset of a game window in physical pixels.
-/// The offset is relative to the left edge of the monitor; the window is centered vertically
-/// (see <see cref="Services.PlacementCalculator.GetTop"/>).
+/// Size and horizontal offset of a game window in physical pixels, as saved for Custom.
+/// The offset is relative to the left edge of the monitor and only used with <see cref="HorizontalAnchor.Offset"/>;
+/// where the window really goes is a <see cref="WindowRect"/> (see Services.PlacementCalculator.Resolve).
 /// </summary>
 public sealed record WindowPlacement(int Width, int Height, int OffsetX)
 {
@@ -96,3 +137,9 @@ public sealed record WindowPlacement(int Width, int Height, int OffsetX)
 
     public const int MaxCoordinate = 32767;
 }
+
+/// <summary>
+/// Where a game window goes: its size and its position relative to the top left corner of its monitor, in physical
+/// pixels. The result of a placement on one monitor (see Services.PlacementCalculator.Resolve), never saved.
+/// </summary>
+public sealed record WindowRect(int Width, int Height, int OffsetX, int OffsetY);

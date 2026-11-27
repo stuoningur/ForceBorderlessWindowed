@@ -26,12 +26,13 @@ public class PlacementPreview : FrameworkElement
     private static readonly TimeSpan AnimationDuration = TimeSpan.FromMilliseconds(250);
 
     /// <summary>Monitor and window size in physical pixels: what is drawn, interpolated during an animation.</summary>
-    private readonly record struct Layout(double MonitorWidth, double MonitorHeight, double X, double Width, double Height)
+    private readonly record struct Layout(double MonitorWidth, double MonitorHeight, double X, double Y, double Width, double Height)
     {
         public static Layout Lerp(Layout a, Layout b, double t) => new(
             a.MonitorWidth + ((b.MonitorWidth - a.MonitorWidth) * t),
             a.MonitorHeight + ((b.MonitorHeight - a.MonitorHeight) * t),
             a.X + ((b.X - a.X) * t),
+            a.Y + ((b.Y - a.Y) * t),
             a.Width + ((b.Width - a.Width) * t),
             a.Height + ((b.Height - a.Height) * t));
     }
@@ -49,12 +50,14 @@ public class PlacementPreview : FrameworkElement
     public static readonly DependencyProperty MonitorWidthProperty = RegisterValue(nameof(MonitorWidth));
     public static readonly DependencyProperty MonitorHeightProperty = RegisterValue(nameof(MonitorHeight));
     public static readonly DependencyProperty WindowXProperty = RegisterValue(nameof(WindowX));
+    public static readonly DependencyProperty WindowYProperty = RegisterValue(nameof(WindowY));
     public static readonly DependencyProperty WindowWidthProperty = RegisterValue(nameof(WindowWidth));
     public static readonly DependencyProperty WindowHeightProperty = RegisterValue(nameof(WindowHeight));
 
     public int MonitorWidth { get => (int)GetValue(MonitorWidthProperty); set => SetValue(MonitorWidthProperty, value); }
     public int MonitorHeight { get => (int)GetValue(MonitorHeightProperty); set => SetValue(MonitorHeightProperty, value); }
     public int WindowX { get => (int)GetValue(WindowXProperty); set => SetValue(WindowXProperty, value); }
+    public int WindowY { get => (int)GetValue(WindowYProperty); set => SetValue(WindowYProperty, value); }
     public int WindowWidth { get => (int)GetValue(WindowWidthProperty); set => SetValue(WindowWidthProperty, value); }
     public int WindowHeight { get => (int)GetValue(WindowHeightProperty); set => SetValue(WindowHeightProperty, value); }
 
@@ -112,7 +115,7 @@ public class PlacementPreview : FrameworkElement
 
     private double Progress => (double)GetValue(ProgressProperty);
 
-    private Layout Target => new(MonitorWidth, MonitorHeight, WindowX, WindowWidth, WindowHeight);
+    private Layout Target => new(MonitorWidth, MonitorHeight, WindowX, WindowY, WindowWidth, WindowHeight);
 
     private Layout Current => Layout.Lerp(_from, _to, Progress);
 
@@ -206,8 +209,7 @@ public class PlacementPreview : FrameworkElement
 
         var outline = IsOverflow ? OverflowBrush : WindowBrush;
         // Centered vertically like the real window; one that is too tall (still being typed) hangs from the top
-        var top = Math.Max(0, (g.MonitorHeight - g.Height) / 2);
-        var window = new Rect(screen.Left + (g.X * scale), screen.Top + (top * scale), g.Width * scale, g.Height * scale);
+        var window = new Rect(screen.Left + (g.X * scale), screen.Top + (g.Y * scale), g.Width * scale, g.Height * scale);
         var pen = new Pen(outline, 1.5);
         if (SizeLabel is not null)
         {

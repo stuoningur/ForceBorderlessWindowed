@@ -30,6 +30,12 @@ internal static class Formats
     public static CompositeFormat Placement_Summary_Custom =>
         field ??= CompositeFormat.Parse(Strings.Placement_Summary_Custom);
 
+    public static CompositeFormat Placement_Summary_GameSize =>
+        field ??= CompositeFormat.Parse(Strings.Placement_Summary_GameSize);
+
+    public static CompositeFormat Placement_Position_Offset =>
+        field ??= CompositeFormat.Parse(Strings.Placement_Position_Offset);
+
     public static CompositeFormat Placement_Error_WidthTooLarge =>
         field ??= CompositeFormat.Parse(Strings.Placement_Error_WidthTooLarge);
 

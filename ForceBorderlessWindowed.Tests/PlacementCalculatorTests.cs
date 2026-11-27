@@ -33,7 +33,7 @@ public class PlacementCalculatorTests
         var monitor = new MonitorBounds(0, 0, 1920, 1200);
 
         Assert.Equal(new WindowPlacement(1920, 1080, 0), PlacementCalculator.CalculateAutomatic(monitor, AspectRatio.Widescreen16x9, keepAspectRatio: true));
-        Assert.Equal(60, PlacementCalculator.GetTop(new WindowPlacement(1920, 1080, 0), monitor));
+        Assert.Equal(new WindowRect(1920, 1080, 0, 60), PlacementCalculator.Resolve(null, new PlacementSettings { KeepAspectRatio = true }, monitor));
 
         // A wider monitor isn't affected: full height as always
         Assert.Equal(new WindowPlacement(2560, 1440, 440), PlacementCalculator.CalculateAutomatic(Ultrawide, AspectRatio.Widescreen16x9, keepAspectRatio: true));
@@ -44,8 +44,8 @@ public class PlacementCalculatorTests
     {
         var game = new PlacementSettings { Mode = PlacementMode.Custom, Custom = new WindowPlacement(1280, 720, 100) };
 
-        Assert.Equal(new WindowPlacement(1280, 720, 100), PlacementCalculator.Resolve(game, new PlacementSettings(), FullHd));
-        Assert.Equal(new WindowPlacement(1920, 1080, 0), PlacementCalculator.Resolve(null, new PlacementSettings(), FullHd));
+        Assert.Equal(new WindowRect(1280, 720, 100, 180), PlacementCalculator.Resolve(game, new PlacementSettings(), FullHd));
+        Assert.Equal(new WindowRect(1920, 1080, 0, 0), PlacementCalculator.Resolve(null, new PlacementSettings(), FullHd));
     }
 
     [Fact]
@@ -53,7 +53,7 @@ public class PlacementCalculatorTests
     {
         var game = new PlacementSettings { Mode = PlacementMode.Custom, Custom = null };
 
-        Assert.Equal(new WindowPlacement(1920, 1080, 0), PlacementCalculator.Resolve(game, new PlacementSettings(), FullHd));
+        Assert.Equal(new WindowRect(1920, 1080, 0, 0), PlacementCalculator.Resolve(game, new PlacementSettings(), FullHd));
     }
 
     [Fact]
@@ -61,8 +61,8 @@ public class PlacementCalculatorTests
     {
         var gameSize = new PlacementSettings { Mode = PlacementMode.GameSize };
 
-        Assert.Equal(new WindowPlacement(1280, 720, 320), PlacementCalculator.Resolve(gameSize, new PlacementSettings(), FullHd, (1280, 720)));
-        Assert.Equal(new WindowPlacement(1920, 1080, 0), PlacementCalculator.Resolve(gameSize, new PlacementSettings(), FullHd, (2560, 1440)));
+        Assert.Equal(new WindowRect(1280, 720, 320, 180), PlacementCalculator.Resolve(gameSize, new PlacementSettings(), FullHd, (1280, 720)));
+        Assert.Equal(new WindowRect(1920, 1080, 0, 0), PlacementCalculator.Resolve(gameSize, new PlacementSettings(), FullHd, (2560, 1440)));
     }
 
     [Fact]
@@ -70,7 +70,7 @@ public class PlacementCalculatorTests
     {
         var gameSize = new PlacementSettings { Mode = PlacementMode.GameSize };
 
-        Assert.Equal(new WindowPlacement(2560, 1440, 440), PlacementCalculator.Resolve(null, gameSize, Ultrawide));
+        Assert.Equal(new WindowRect(2560, 1440, 440, 0), PlacementCalculator.Resolve(null, gameSize, Ultrawide));
     }
 
     [Fact]
@@ -90,13 +90,48 @@ public class PlacementCalculatorTests
         Assert.Same(placement, PlacementCalculator.FitToMonitor(placement, FullHd));
     }
 
-    [Fact]
-    public void GetTop_CentersVertically_NeverAboveTheMonitor()
+    [Theory]
+    [InlineData(HorizontalAnchor.Left, VerticalAnchor.Top, 0, 0)]
+    [InlineData(HorizontalAnchor.Center, VerticalAnchor.Center, 320, 180)]
+    [InlineData(HorizontalAnchor.Right, VerticalAnchor.Bottom, 640, 360)]
+    [InlineData(HorizontalAnchor.Offset, VerticalAnchor.Center, 100, 180)]
+    public void Position_PutsTheWindowAtItsAnchors(HorizontalAnchor horizontal, VerticalAnchor vertical, int x, int y)
     {
-        var monitor = new MonitorBounds(0, 100, 1920, 1080);
+        Assert.Equal(new WindowRect(1280, 720, x, y),
+            PlacementCalculator.Position(new WindowPlacement(1280, 720, 100), horizontal, vertical, FullHd));
+    }
 
-        Assert.Equal(100 + 180, PlacementCalculator.GetTop(new WindowPlacement(1280, 720, 0), monitor));
-        Assert.Equal(100, PlacementCalculator.GetTop(new WindowPlacement(1280, 2000, 0), monitor));
+    [Fact]
+    public void Position_NeverAboveOrLeftOfTheMonitor()
+    {
+        Assert.Equal(new WindowRect(2000, 2000, 0, 0),
+            PlacementCalculator.Position(new WindowPlacement(2000, 2000, 0), HorizontalAnchor.Right, VerticalAnchor.Bottom, FullHd));
+    }
+
+    [Fact]
+    public void Resolve_AnchorsFollowTheDisplay_InEveryMode()
+    {
+        var left = new PlacementSettings { Horizontal = HorizontalAnchor.Left, Vertical = VerticalAnchor.Top };
+
+        Assert.Equal(new WindowRect(2560, 1440, 0, 0), PlacementCalculator.Resolve(left, new PlacementSettings(), Ultrawide));
+        Assert.Equal(new WindowRect(1280, 720, 0, 0),
+            PlacementCalculator.Resolve(left with { Mode = PlacementMode.GameSize }, new PlacementSettings(), FullHd, (1280, 720)));
+
+        var right = new PlacementSettings { Mode = PlacementMode.Custom, Custom = new WindowPlacement(1280, 720, 100), Horizontal = HorizontalAnchor.Right };
+        Assert.Equal(new WindowRect(1280, 720, 640, 180), PlacementCalculator.Resolve(right, new PlacementSettings(), FullHd));
+        Assert.Equal(new WindowRect(1280, 720, 2160, 360), PlacementCalculator.Resolve(right, new PlacementSettings(), Ultrawide));
+    }
+
+    [Fact]
+    public void Resolve_SettingsFromOlderVersions_KeepTheirPositions()
+    {
+        // No "horizontal" in the file: Custom used its offset, the other modes were centered
+        var custom = new PlacementSettings { Mode = PlacementMode.Custom, Custom = new WindowPlacement(1280, 720, 100) };
+        Assert.Equal(HorizontalAnchor.Offset, custom.EffectiveHorizontal());
+        Assert.Equal(HorizontalAnchor.Center, new PlacementSettings().EffectiveHorizontal());
+
+        // The offset only exists for Custom
+        Assert.Equal(HorizontalAnchor.Center, new PlacementSettings { Horizontal = HorizontalAnchor.Offset }.EffectiveHorizontal());
     }
 
     [Fact]

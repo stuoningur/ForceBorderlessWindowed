@@ -334,11 +334,10 @@
     <value>Use default</value>
   </data>
   <data name="Placement_Automatic" xml:space="preserve">
-    <value>Automatic: centered, full height</value>
+    <value>Automatic: full height</value>
   </data>
   <data name="Placement_AutomaticPreview" xml:space="preserve">
-    <value>{0} × {1} at X {2}, {3}</value>
-    <comment>{0} = width, {1} = height, {2} = horizontal offset, all in pixels; {3} = the display's short name (Placement_Display_*Short or the monitor name), like in Placement_Summary_WithDisplay</comment>
+    <value>{0} × {1}, {2}</value>
   </data>
   <data name="Placement_Custom" xml:space="preserve">
     <value>Custom</value>
@@ -351,24 +350,6 @@
   </data>
   <data name="Placement_OffsetX" xml:space="preserve">
     <value>_Offset X</value>
-  </data>
-  <data name="Placement_AlignLeft" xml:space="preserve">
-    <value>Left</value>
-  </data>
-  <data name="Placement_AlignLeft_Tooltip" xml:space="preserve">
-    <value>Set the offset so the window touches the left edge of the display</value>
-  </data>
-  <data name="Placement_AlignRight" xml:space="preserve">
-    <value>Right</value>
-  </data>
-  <data name="Placement_AlignRight_Tooltip" xml:space="preserve">
-    <value>Set the offset so the window touches the right edge of the display</value>
-  </data>
-  <data name="Placement_CenterX" xml:space="preserve">
-    <value>Center</value>
-  </data>
-  <data name="Placement_CenterX_Tooltip" xml:space="preserve">
-    <value>Set the offset so the window is centered horizontally on the display</value>
   </data>
   <data name="Games_AddMenu" xml:space="preserve">
     <value>_Add</value>
@@ -410,8 +391,7 @@
     <value>Game</value>
   </data>
   <data name="Placement_Summary_Automatic" xml:space="preserve">
-    <value>Automatic {3} – {0} × {1} at X {2}</value>
-    <comment>{3} = aspect ratio, e.g. "16:9"</comment>
+    <value>Automatic {0} – {1} × {2}, {3}</value>
   </data>
   <data name="Placement_AspectRatio_Label" xml:space="preserve">
     <value>Aspe_ct ratio</value>
@@ -426,7 +406,7 @@
     <value>Your changes will be lost if you don't save them.</value>
   </data>
   <data name="Placement_Summary_Custom" xml:space="preserve">
-    <value>Custom – {0} × {1} at X {2}</value>
+    <value>Custom – {0} × {1}, {2}</value>
   </data>
   <data name="Common_Close" xml:space="preserve">
     <value>Close</value>
@@ -755,7 +735,7 @@
     <value>Leave empty for every window of the program. Useful when several games share one exe, e.g. javaw.exe.</value>
   </data>
   <data name="Placement_GameSize" xml:space="preserve">
-    <value>The game’s own size, centered</value>
+    <value>The game’s own size</value>
   </data>
   <data name="Placement_GameSize_Hint" xml:space="preserve">
     <value>Removes the frame and keeps the size the game sets. Follows a resolution you change in the game.</value>
@@ -764,7 +744,7 @@
     <value>Game’s size</value>
   </data>
   <data name="Placement_Summary_GameSize" xml:space="preserve">
-    <value>Game’s own size, centered</value>
+    <value>Game’s own size, {0}</value>
   </data>
   <data name="Hotkeys_ApplyToForeground" xml:space="preserve">
     <value>Make the window in the foreground borderless</value>
@@ -900,5 +880,50 @@
   </data>
   <data name="Placement_FitToDisplay_Tooltip" xml:space="preserve">
     <value>Shrinks the window so it fits on the display. Only the values that are too large change.</value>
+  </data>
+  <data name="Placement_Position_Horizontal" xml:space="preserve">
+    <value>Horizontal position</value>
+  </data>
+  <data name="Placement_Position_Vertical" xml:space="preserve">
+    <value>Vertical position</value>
+  </data>
+  <data name="Placement_Anchor_Left" xml:space="preserve">
+    <value>Left</value>
+  </data>
+  <data name="Placement_Anchor_Center" xml:space="preserve">
+    <value>Center</value>
+  </data>
+  <data name="Placement_Anchor_Right" xml:space="preserve">
+    <value>Right</value>
+  </data>
+  <data name="Placement_Anchor_Offset" xml:space="preserve">
+    <value>Exact offset</value>
+  </data>
+  <data name="Placement_Anchor_Offset_Tooltip" xml:space="preserve">
+    <value>A fixed distance from the left edge of the display, in pixels. Left, Center and Right follow the display instead.</value>
+  </data>
+  <data name="Placement_Anchor_Top" xml:space="preserve">
+    <value>Top</value>
+  </data>
+  <data name="Placement_Anchor_Bottom" xml:space="preserve">
+    <value>Bottom</value>
+  </data>
+  <data name="Placement_Position_Left" xml:space="preserve">
+    <value>left</value>
+  </data>
+  <data name="Placement_Position_Centered" xml:space="preserve">
+    <value>centered</value>
+  </data>
+  <data name="Placement_Position_Right" xml:space="preserve">
+    <value>right</value>
+  </data>
+  <data name="Placement_Position_Offset" xml:space="preserve">
+    <value>X {0}</value>
+  </data>
+  <data name="Placement_Position_Top" xml:space="preserve">
+    <value>top</value>
+  </data>
+  <data name="Placement_Position_Bottom" xml:space="preserve">
+    <value>bottom</value>
   </data>
 </root>

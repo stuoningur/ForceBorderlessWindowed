@@ -332,10 +332,10 @@
     <value>Standard verwenden</value>
   </data>
   <data name="Placement_Automatic" xml:space="preserve">
-    <value>Automatisch: zentriert, volle Höhe</value>
+    <value>Automatisch: volle Höhe</value>
   </data>
   <data name="Placement_AutomaticPreview" xml:space="preserve">
-    <value>{0} × {1} bei X {2}, {3}</value>
+    <value>{0} × {1}, {2}</value>
   </data>
   <data name="Placement_Custom" xml:space="preserve">
     <value>Benutzerdefiniert</value>
@@ -348,24 +348,6 @@
   </data>
   <data name="Placement_OffsetX" xml:space="preserve">
     <value>_Versatz X</value>
-  </data>
-  <data name="Placement_AlignLeft" xml:space="preserve">
-    <value>Links</value>
-  </data>
-  <data name="Placement_AlignLeft_Tooltip" xml:space="preserve">
-    <value>Versatz so setzen, dass das Fenster am linken Bildschirmrand anliegt</value>
-  </data>
-  <data name="Placement_AlignRight" xml:space="preserve">
-    <value>Rechts</value>
-  </data>
-  <data name="Placement_AlignRight_Tooltip" xml:space="preserve">
-    <value>Versatz so setzen, dass das Fenster am rechten Bildschirmrand anliegt</value>
-  </data>
-  <data name="Placement_CenterX" xml:space="preserve">
-    <value>Mitte</value>
-  </data>
-  <data name="Placement_CenterX_Tooltip" xml:space="preserve">
-    <value>Versatz so setzen, dass das Fenster waagerecht auf dem Bildschirm zentriert ist</value>
   </data>
   <data name="Games_AddMenu" xml:space="preserve">
     <value>Hin_zufügen</value>
@@ -407,8 +389,7 @@
     <value>Spiel</value>
   </data>
   <data name="Placement_Summary_Automatic" xml:space="preserve">
-    <value>Automatisch {3} – {0} × {1} bei X {2}</value>
-    <comment>{3} = aspect ratio, e.g. "16:9"</comment>
+    <value>Automatisch {0} – {1} × {2}, {3}</value>
   </data>
   <data name="Placement_AspectRatio_Label" xml:space="preserve">
     <value>Seitenve_rhältnis</value>
@@ -423,7 +404,7 @@
     <value>Deine Änderungen gehen verloren, wenn du sie nicht speicherst.</value>
   </data>
   <data name="Placement_Summary_Custom" xml:space="preserve">
-    <value>Benutzerdefiniert – {0} × {1} bei X {2}</value>
+    <value>Benutzerdefiniert – {0} × {1}, {2}</value>
   </data>
   <data name="Common_Close" xml:space="preserve">
     <value>Schließen</value>
@@ -750,7 +731,7 @@
     <value>Leer lassen für jedes Fenster des Programms. Nützlich, wenn sich mehrere Spiele eine Programmdatei teilen, z. B. javaw.exe.</value>
   </data>
   <data name="Placement_GameSize" xml:space="preserve">
-    <value>Eigene Größe des Spiels, zentriert</value>
+    <value>Eigene Größe des Spiels</value>
   </data>
   <data name="Placement_GameSize_Hint" xml:space="preserve">
     <value>Entfernt den Rahmen und behält die Größe, die das Spiel einstellt. Folgt einer Auflösung, die du im Spiel änderst.</value>
@@ -759,7 +740,7 @@
     <value>Größe des Spiels</value>
   </data>
   <data name="Placement_Summary_GameSize" xml:space="preserve">
-    <value>Eigene Größe des Spiels, zentriert</value>
+    <value>Eigene Größe des Spiels, {0}</value>
   </data>
   <data name="Hotkeys_ApplyToForeground" xml:space="preserve">
     <value>Fenster im Vordergrund randlos machen</value>
@@ -891,9 +872,54 @@
     <value>Das laufende Fenster „{0}“ übernimmt stattdessen „{1}“: dessen Filter sind genauer.</value>
   </data>
   <data name="Placement_FitToDisplay" xml:space="preserve">
-    <value>An Anzeige anpassen</value>
+    <value>An Bildschirm anpassen</value>
   </data>
   <data name="Placement_FitToDisplay_Tooltip" xml:space="preserve">
-    <value>Verkleinert das Fenster, damit es auf die Anzeige passt. Nur zu große Werte ändern sich.</value>
+    <value>Verkleinert das Fenster, damit es auf den Bildschirm passt. Nur zu große Werte ändern sich.</value>
+  </data>
+  <data name="Placement_Position_Horizontal" xml:space="preserve">
+    <value>Horizontale Position</value>
+  </data>
+  <data name="Placement_Position_Vertical" xml:space="preserve">
+    <value>Vertikale Position</value>
+  </data>
+  <data name="Placement_Anchor_Left" xml:space="preserve">
+    <value>Links</value>
+  </data>
+  <data name="Placement_Anchor_Center" xml:space="preserve">
+    <value>Mitte</value>
+  </data>
+  <data name="Placement_Anchor_Right" xml:space="preserve">
+    <value>Rechts</value>
+  </data>
+  <data name="Placement_Anchor_Offset" xml:space="preserve">
+    <value>Genauer Versatz</value>
+  </data>
+  <data name="Placement_Anchor_Offset_Tooltip" xml:space="preserve">
+    <value>Ein fester Abstand vom linken Rand des Bildschirms, in Pixeln. Links, Mitte und Rechts richten sich dagegen nach dem Bildschirm.</value>
+  </data>
+  <data name="Placement_Anchor_Top" xml:space="preserve">
+    <value>Oben</value>
+  </data>
+  <data name="Placement_Anchor_Bottom" xml:space="preserve">
+    <value>Unten</value>
+  </data>
+  <data name="Placement_Position_Left" xml:space="preserve">
+    <value>links</value>
+  </data>
+  <data name="Placement_Position_Centered" xml:space="preserve">
+    <value>zentriert</value>
+  </data>
+  <data name="Placement_Position_Right" xml:space="preserve">
+    <value>rechts</value>
+  </data>
+  <data name="Placement_Position_Offset" xml:space="preserve">
+    <value>X {0}</value>
+  </data>
+  <data name="Placement_Position_Top" xml:space="preserve">
+    <value>oben</value>
+  </data>
+  <data name="Placement_Position_Bottom" xml:space="preserve">
+    <value>unten</value>
   </data>
 </root>

@@ -93,7 +93,7 @@ internal sealed class FakeDesktop : IWindowManipulator, IWindowQueries, IProcess
         ? new WindowSnapshot { Style = w.HasFrame ? 0x00CF0000u : 0, NormalRect = w.Rect }
         : null;
 
-    public WindowChangeResult MakeBorderless(nint windowHandle, WindowPlacement placement, MonitorBounds monitor, out bool modified)
+    public WindowChangeResult MakeBorderless(nint windowHandle, WindowRect placement, MonitorBounds monitor, out bool modified)
     {
         modified = false;
         if (Find(windowHandle) is not { } w || w.Minimized)
@@ -126,7 +126,7 @@ internal sealed class FakeDesktop : IWindowManipulator, IWindowQueries, IProcess
         return WindowChangeResult.Applied;
     }
 
-    public WindowLook? CaptureLook(nint windowHandle, WindowPlacement placement, MonitorBounds monitor) =>
+    public WindowLook? CaptureLook(nint windowHandle, WindowRect placement, MonitorBounds monitor) =>
         Exists(windowHandle) ? new WindowLook { Style = 0, Bounds = Target(placement, monitor) } : null;
 
     public bool GameSwitchedMode(nint windowHandle, WindowLook look) => Find(windowHandle) is { SwitchedOwnMode: true, HasFrame: false };
@@ -149,10 +149,10 @@ internal sealed class FakeDesktop : IWindowManipulator, IWindowQueries, IProcess
         return WindowChangeResult.Applied;
     }
 
-    private static (int, int, int, int) Target(WindowPlacement placement, MonitorBounds monitor)
+    private static (int, int, int, int) Target(WindowRect placement, MonitorBounds monitor)
     {
         var left = monitor.Left + placement.OffsetX;
-        var top = PlacementCalculator.GetTop(placement, monitor);
+        var top = monitor.Top + placement.OffsetY;
         return (left, top, left + placement.Width, top + placement.Height);
     }
 

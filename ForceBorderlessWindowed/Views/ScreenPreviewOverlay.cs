@@ -28,7 +28,7 @@ internal sealed class ScreenPreviewOverlay : IScreenPreview
 
     private Window? _current;
 
-    public void Show(MonitorBounds monitor, WindowPlacement placement, string label)
+    public void Show(MonitorBounds monitor, WindowRect placement, string label)
     {
         _current?.Close();
 
@@ -89,7 +89,7 @@ internal sealed class ScreenPreviewOverlay : IScreenPreview
             });
 
             var x = monitor.Left + placement.OffsetX;
-            var y = PlacementCalculator.GetTop(placement, monitor);
+            var y = monitor.Top + placement.OffsetY;
             // Moved first, then sized: the second call happens with the target monitor's scaling already in place
             // (same approach as WindowManipulator). Topmost already, from the Window property.
             const SET_WINDOW_POS_FLAGS flags = SET_WINDOW_POS_FLAGS.SWP_NOACTIVATE | SET_WINDOW_POS_FLAGS.SWP_NOZORDER;

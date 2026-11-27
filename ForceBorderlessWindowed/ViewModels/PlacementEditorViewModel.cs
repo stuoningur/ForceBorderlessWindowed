@@ -19,14 +19,6 @@ public enum PlacementChoice
     GameSize,
 }
 
-/// <summary>Where the one-off offset buttons put the custom width on the display.</summary>
-public enum OffsetAlignment
-{
-    Left,
-    Center,
-    Right,
-}
-
 /// <summary>
 /// Editor for a <see cref="PlacementSettings"/>. Used for the global default (no "Use default" option)
 /// and for each game (with "Use default", which then shows what the default currently resolves to).
@@ -68,6 +60,10 @@ public partial class PlacementEditorViewModel : ObservableObject
         // Kept while Custom is selected (and saved with it), so switching back to Automatic restores it
         SelectedAspectRatio = AspectRatios.FirstOrDefault(r => r.Ratio == settings?.AspectRatio) ?? AspectRatios[0];
         KeepAspectRatio = settings?.KeepAspectRatio ?? false;
+
+        // As saved; older files without it get what they did back then (Custom: its offset, the rest: centered)
+        Horizontal = settings?.EffectiveHorizontal() ?? HorizontalAnchor.Center;
+        Vertical = settings?.Vertical ?? VerticalAnchor.Center;
 
         _savedCustom = settings is { Mode: PlacementMode.Custom } ? settings.Custom : null;
 
@@ -180,18 +176,16 @@ public partial class PlacementEditorViewModel : ObservableObject
             monitor = game.Monitor;
         }
 
-        var placement = source.Choice switch
+        // The game's own size needs the running game's size (the button is off without it)
+        if (source.ToSettings() is not { } settings
+            || (settings.Mode == PlacementMode.GameSize && game?.ClientSize is null))
         {
-            PlacementChoice.Custom => PlacementCalculator.FitToMonitor(new WindowPlacement(source.Width, source.Height, source.OffsetX), monitor),
-            PlacementChoice.GameSize => game?.ClientSize is { } size ? PlacementCalculator.CenterOnMonitor(size, monitor) : null,
-            _ => PlacementCalculator.CalculateAutomatic(monitor, source.SelectedAspectRatio.Ratio, source.KeepAspectRatio),
-        };
-
-        if (placement is not null)
-        {
-            screen.Show(monitor, placement,
-                string.Format(CultureInfo.CurrentCulture, "{0} × {1}", placement.Width, placement.Height));
+            return;
         }
+
+        // The same calculation as the watcher's
+        var placement = PlacementCalculator.Resolve(settings, settings, monitor, game?.ClientSize);
+        screen.Show(monitor, placement, string.Format(CultureInfo.CurrentCulture, "{0} × {1}", placement.Width, placement.Height));
     }
 
     private bool CanShowOnDisplayNow()
@@ -204,7 +198,8 @@ public partial class PlacementEditorViewModel : ObservableObject
 
     [ObservableProperty]
     [NotifyPropertyChangedFor(nameof(IsUseDefault), nameof(IsAutomatic), nameof(IsCustom), nameof(IsGameSize),
-        nameof(ShowDisplaySelection))]
+        nameof(ShowDisplaySelection), nameof(EffectiveHorizontal), nameof(IsAnchorLeft), nameof(IsAnchorCenterX),
+        nameof(IsAnchorRight), nameof(IsAnchorOffset), nameof(ShowOffsetX))]
     public partial PlacementChoice Choice { get; set; }
 
     // One bool per RadioButton: IsChecked binds to bools, and setting false is ignored,
@@ -263,6 +258,81 @@ public partial class PlacementEditorViewModel : ObservableObject
         UpdateMonitor();
         OnSummaryChanged();
     }
+
+    /// <summary>
+    /// Where the window sits horizontally, as chosen. <see cref="HorizontalAnchor.Offset"/> stays chosen while another
+    /// mode is selected (so going back to Custom keeps it), but only Custom has an offset: see <see cref="EffectiveHorizontal"/>.
+    /// </summary>
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(EffectiveHorizontal), nameof(IsAnchorLeft), nameof(IsAnchorCenterX), nameof(IsAnchorRight),
+        nameof(IsAnchorOffset), nameof(ShowOffsetX))]
+    public partial HorizontalAnchor Horizontal { get; set; }
+
+    [ObservableProperty]
+    [NotifyPropertyChangedFor(nameof(IsAnchorTop), nameof(IsAnchorCenterY), nameof(IsAnchorBottom))]
+    public partial VerticalAnchor Vertical { get; set; }
+
+    /// <summary>The horizontal position that applies to the selected mode (and gets saved).</summary>
+    public HorizontalAnchor EffectiveHorizontal =>
+        Horizontal == HorizontalAnchor.Offset && Choice != PlacementChoice.Custom ? HorizontalAnchor.Center : Horizontal;
+
+    // One bool per RadioButton, like the modes above
+    public bool IsAnchorLeft
+    {
+        get => EffectiveHorizontal == HorizontalAnchor.Left;
+        set { if (value) { Horizontal = HorizontalAnchor.Left; } }
+    }
+
+    public bool IsAnchorCenterX
+    {
+        get => EffectiveHorizontal == HorizontalAnchor.Center;
+        set { if (value) { Horizontal = HorizontalAnchor.Center; } }
+    }
+
+    public bool IsAnchorRight
+    {
+        get => EffectiveHorizontal == HorizontalAnchor.Right;
+        set { if (value) { Horizontal = HorizontalAnchor.Right; } }
+    }
+
+    public bool IsAnchorOffset
+    {
+        get => EffectiveHorizontal == HorizontalAnchor.Offset;
+        set { if (value) { Horizontal = HorizontalAnchor.Offset; } }
+    }
+
+    public bool IsAnchorTop
+    {
+        get => Vertical == VerticalAnchor.Top;
+        set { if (value) { Vertical = VerticalAnchor.Top; } }
+    }
+
+    public bool IsAnchorCenterY
+    {
+        get => Vertical == VerticalAnchor.Center;
+        set { if (value) { Vertical = VerticalAnchor.Center; } }
+    }
+
+    public bool IsAnchorBottom
+    {
+        get => Vertical == VerticalAnchor.Bottom;
+        set { if (value) { Vertical = VerticalAnchor.Bottom; } }
+    }
+
+    /// <summary>The Offset X field: only for Custom with an exact offset; the anchors need no number.</summary>
+    public bool ShowOffsetX => IsAnchorOffset;
+
+    partial void OnHorizontalChanged(HorizontalAnchor value)
+    {
+        OnValidationChanged();   // the offset only counts for the exact offset
+        OnSummaryChanged();
+    }
+
+    partial void OnVerticalChanged(VerticalAnchor value) => OnSummaryChanged();
+
+    /// <summary>Where a window of this size goes on <paramref name="monitor"/> with this editor's position choice.</summary>
+    private WindowRect Place(WindowPlacement size, MonitorBounds monitor) =>
+        PlacementCalculator.Position(size, EffectiveHorizontal, Vertical, monitor);
 
     /// <summary>"Use default" takes the display from the default too, so the selection is only shown otherwise.</summary>
     public bool ShowDisplaySelection => Choice != PlacementChoice.UseDefault;
@@ -327,7 +397,8 @@ public partial class PlacementEditorViewModel : ObservableObject
 
     public string? HeightError => HeightInputError ?? FitErrors.Height;
 
-    public string? OffsetXError => OffsetXInputError ?? FitErrors.OffsetX;
+    /// <summary>Only while the field is shown (see <see cref="UsesOffset"/>): a hidden error would block saving.</summary>
+    public string? OffsetXError => UsesOffset ? OffsetXInputError ?? FitErrors.OffsetX : null;
 
     /// <summary>
     /// The monitor custom values must fit on, or null if there is nothing reliable to check against:
@@ -358,25 +429,35 @@ public partial class PlacementEditorViewModel : ObservableObject
             return (
                 WidthInputError is null && !widthFits ? Format(Formats.Placement_Error_WidthTooLarge, monitor.Width) : null,
                 HeightInputError is null && Height > monitor.Height ? Format(Formats.Placement_Error_HeightTooLarge, monitor.Height) : null,
-                WidthInputError is null && OffsetXInputError is null && widthFits && OffsetX + Width > monitor.Width
+                UsesOffset && WidthInputError is null && OffsetXInputError is null && widthFits && OffsetX + Width > monitor.Width
                     ? Format(Formats.Placement_Error_OffsetTooLarge, monitor.Width - Width)
                     : null);
         }
     }
 
-    /// <summary>The custom numbers are exactly the saved ones (and all three fields hold valid numbers).</summary>
+    /// <summary>
+    /// Custom with an exact offset: only then the Offset X field is shown and counts (its errors, the fit check). With
+    /// an anchor the number is kept as it is, for switching back.
+    /// </summary>
+    private bool UsesOffset => Choice == PlacementChoice.Custom && EffectiveHorizontal == HorizontalAnchor.Offset;
+
+    /// <summary>The custom numbers are exactly the saved ones (and the fields in use hold valid numbers).</summary>
     private bool IsSavedCustomUnchanged =>
         _savedCustom is { } saved
-        && WidthInputError is null && HeightInputError is null && OffsetXInputError is null
-        && (Width, Height, OffsetX) == (saved.Width, saved.Height, saved.OffsetX);
+        && WidthInputError is null && HeightInputError is null
+        && (Width, Height) == (saved.Width, saved.Height)
+        && (!UsesOffset || (OffsetXInputError is null && OffsetX == saved.OffsetX));
+
+    /// <summary>Too large for <paramref name="monitor"/>: wider, taller, or (with an exact offset) too far right.</summary>
+    private bool DoesNotFit(MonitorBounds monitor) =>
+        Width > monitor.Width || Height > monitor.Height || (UsesOffset && OffsetX + Width > monitor.Width);
 
     /// <summary>
     /// Saved custom values that don't fit the display: the game window is shrunk to fit. Shown below the fields;
     /// doesn't block saving. Editing them turns it into the usual field errors.
     /// </summary>
     public string? FitWarning =>
-        Choice == PlacementChoice.Custom && IsSavedCustomUnchanged && _fitMonitor is { } monitor
-        && (Width > monitor.Width || Height > monitor.Height || OffsetX + Width > monitor.Width)
+        Choice == PlacementChoice.Custom && IsSavedCustomUnchanged && _fitMonitor is { } monitor && DoesNotFit(monitor)
             ? string.Format(CultureInfo.CurrentCulture, Formats.Placement_Warning_DoesNotFit, monitor.Width, monitor.Height)
             : null;
 
@@ -394,7 +475,7 @@ public partial class PlacementEditorViewModel : ObservableObject
         : HeightError is not null ? SettingsField.Height
         : OffsetXError is not null ? SettingsField.OffsetX
         // Not filled in yet (the display isn't known yet): the numbers are still 0
-        : !WindowPlacement.IsValidSize(Width, Height, OffsetX) ? SettingsField.Width
+        : !WindowPlacement.IsValidSize(Width, Height, UsesOffset ? OffsetX : 0) ? SettingsField.Width
         : null;
 
     /// <summary>
@@ -403,8 +484,8 @@ public partial class PlacementEditorViewModel : ObservableObject
     /// </summary>
     private bool ExceedsMonitor(MonitorBounds monitor) =>
         Choice == PlacementChoice.Custom
-        && WidthInputError is null && HeightInputError is null && OffsetXInputError is null
-        && (OffsetX + Width > monitor.Width || Height > monitor.Height);
+        && WidthInputError is null && HeightInputError is null && (!UsesOffset || OffsetXInputError is null)
+        && DoesNotFit(monitor);
 
     /// <summary>
     /// What the preview drawing shows: the effective placement on its monitor. For "Use default" that is
@@ -438,23 +519,24 @@ public partial class PlacementEditorViewModel : ObservableObject
         // The game decides the size: an example window at three quarters of the monitor, labeled as such
         if (Choice == PlacementChoice.GameSize)
         {
-            var example = PlacementCalculator.CenterOnMonitor((monitor.Width * 3 / 4, monitor.Height * 3 / 4), monitor);
-            return new PlacementPreviewData(monitor.Width, monitor.Height, example.OffsetX, example.Width, example.Height,
-                Exceeds: false, Strings.Placement_GameSize_PreviewLabel);
+            var example = Place(PlacementCalculator.CenterOnMonitor((monitor.Width * 3 / 4, monitor.Height * 3 / 4), monitor), monitor);
+            return new PlacementPreviewData(monitor.Width, monitor.Height, example.OffsetX, example.OffsetY, example.Width,
+                example.Height, Exceeds: false, Strings.Placement_GameSize_PreviewLabel);
         }
 
-        // AutomaticPlacement is for _monitor; another monitor (a game's, for the default) gets its own
-        var automatic = monitor == _monitor && AutomaticPlacement is { } own
-            ? own
-            : PlacementCalculator.CalculateAutomatic(monitor, SelectedAspectRatio.Ratio, KeepAspectRatio);
-        var (width, height, offsetX) = Choice == PlacementChoice.Custom
-            ? (Width, Height, OffsetX)
-            : (automatic.Width, automatic.Height, automatic.OffsetX);
-
-        return new PlacementPreviewData(monitor.Width, monitor.Height, offsetX, width, height, ExceedsMonitor(monitor));
+        // Custom as typed, not shrunk to fit: the drawing shows the overflow in the caution color
+        var window = Place(Choice == PlacementChoice.Custom ? new WindowPlacement(Width, Height, OffsetX) : AutomaticOn(monitor), monitor);
+        return new PlacementPreviewData(monitor.Width, monitor.Height, window.OffsetX, window.OffsetY, window.Width, window.Height,
+            ExceedsMonitor(monitor));
     }
 
-    /// <summary>Short description of the effective placement, e.g. "Automatic – 2560 × 1440 at X 1280, primary display".</summary>
+    /// <summary>The automatic size on <paramref name="monitor"/>: <see cref="AutomaticPlacement"/> for the previewed one.</summary>
+    private WindowPlacement AutomaticOn(MonitorBounds monitor) =>
+        monitor == _monitor && AutomaticPlacement is { } own
+            ? own
+            : PlacementCalculator.CalculateAutomatic(monitor, SelectedAspectRatio.Ratio, KeepAspectRatio);
+
+    /// <summary>Short description of the effective placement, e.g. "Automatic 16:9 – 2560 × 1440, left, primary display".</summary>
     public string Summary => SummaryOn(null);
 
     /// <summary>The summary, with the automatic size calculated for <paramref name="monitor"/> instead of the previewed one.</summary>
@@ -468,11 +550,11 @@ public partial class PlacementEditorViewModel : ObservableObject
         var placement = Choice switch
         {
             PlacementChoice.UseDefault => null,
-            PlacementChoice.Custom => Format(Formats.Placement_Summary_Custom, Width, Height, OffsetX),
-            PlacementChoice.GameSize => Strings.Placement_Summary_GameSize,
+            PlacementChoice.Custom => string.Format(CultureInfo.CurrentCulture, Formats.Placement_Summary_Custom, Width, Height, PositionText),
+            PlacementChoice.GameSize => string.Format(CultureInfo.CurrentCulture, Formats.Placement_Summary_GameSize, PositionText),
             _ when automatic is not null =>
                 string.Format(CultureInfo.CurrentCulture, Formats.Placement_Summary_Automatic,
-                    automatic.Width, automatic.Height, automatic.OffsetX, SelectedAspectRatio.ShortLabel),
+                    SelectedAspectRatio.ShortLabel, automatic.Width, automatic.Height, PositionText),
             _ => "",
         };
 
@@ -484,6 +566,28 @@ public partial class PlacementEditorViewModel : ObservableObject
         return SelectedDisplay is { } display
             ? string.Format(CultureInfo.CurrentCulture, Formats.Placement_Summary_WithDisplay, placement, display.ShortLabel)
             : placement;
+    }
+
+    /// <summary>The position part of the summary, e.g. "left", "X 100" or "centered, top".</summary>
+    private string PositionText
+    {
+        get
+        {
+            var horizontal = EffectiveHorizontal switch
+            {
+                HorizontalAnchor.Left => Strings.Placement_Position_Left,
+                HorizontalAnchor.Right => Strings.Placement_Position_Right,
+                HorizontalAnchor.Offset => Format(Formats.Placement_Position_Offset, OffsetX),
+                _ => Strings.Placement_Position_Centered,
+            };
+            var vertical = Vertical switch
+            {
+                VerticalAnchor.Top => Strings.Placement_Position_Top,
+                VerticalAnchor.Bottom => Strings.Placement_Position_Bottom,
+                _ => null,
+            };
+            return vertical is null ? horizontal : $"{horizontal}, {vertical}";   // a list, like the rest of the summary
+        }
     }
 
     /// <summary>The default's summary as it applies to this game: on the same monitor as the preview.</summary>
@@ -532,7 +636,7 @@ public partial class PlacementEditorViewModel : ObservableObject
     public bool IsEdit(string? propertyName) => propertyName switch
     {
         nameof(Choice) or nameof(SelectedAspectRatio) or nameof(KeepAspectRatio) or nameof(WidthText) or nameof(HeightText)
-            or nameof(OffsetXText) => true,
+            or nameof(OffsetXText) or nameof(Horizontal) or nameof(Vertical) => true,
         nameof(SelectedDisplay) => !_rebuildingOptions,
         _ => false,
     };
@@ -566,6 +670,8 @@ public partial class PlacementEditorViewModel : ObservableObject
             AspectRatio = SelectedAspectRatio.Ratio,
             KeepAspectRatio = KeepAspectRatio,
             Custom = Choice == PlacementChoice.Custom ? new WindowPlacement(Width, Height, OffsetX) : null,
+            Horizontal = EffectiveHorizontal,
+            Vertical = Vertical,
             Display = target,
             DisplayId = isSpecific ? id : null,
             DisplayName = isSpecific ? name : null,
@@ -626,37 +732,8 @@ public partial class PlacementEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(FirstInvalidField));
         OnPropertyChanged(nameof(Preview));
         OnPropertyChanged(nameof(CanFitToDisplay));
-        AlignXCommand.NotifyCanExecuteChanged();
         FitToDisplayCommand.NotifyCanExecuteChanged();
     }
-
-    /// <summary>
-    /// One-off: fills in the offset that puts the custom width at the left edge, the center or the right edge of
-    /// the previewed display. It stays an ordinary value afterwards. With "the display the game is on" that's the
-    /// settings window's monitor, so on a display of another width the game ends up off-center / not flush right
-    /// (the watcher still keeps it on screen).
-    /// Through the text, like the automatic pre-fill: that also clears a mistyped offset's error.
-    /// </summary>
-    [RelayCommand(CanExecute = nameof(CanAlignX))]
-    private void AlignX(OffsetAlignment alignment)
-    {
-        if (_monitor is { } monitor)
-        {
-            var free = monitor.Width - Width;
-            var offset = alignment switch
-            {
-                OffsetAlignment.Left => 0,
-                OffsetAlignment.Right => free,
-                _ => free / 2,
-            };
-            OffsetXText = offset.ToString(CultureInfo.CurrentCulture);
-        }
-    }
-
-    /// <summary>Only for a valid width that fits: otherwise there is nothing to align.</summary>
-    private bool CanAlignX() =>
-        Choice == PlacementChoice.Custom && WidthInputError is null && Width > 0
-        && _monitor is { } monitor && Width <= monitor.Width;
 
     /// <summary>Hands a valid number to <paramref name="apply"/>; returns the field's error, or null.</summary>
     private static string? ParseField(string text, int minimum, Action<int> apply)

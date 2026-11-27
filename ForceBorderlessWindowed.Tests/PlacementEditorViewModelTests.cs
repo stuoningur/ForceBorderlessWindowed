@@ -36,29 +36,73 @@ public class PlacementEditorViewModelTests
         Assert.Null(editor.FitWarning);
     }
 
-    [Theory]
-    [InlineData(OffsetAlignment.Left, 0)]
-    [InlineData(OffsetAlignment.Center, 320)]
-    [InlineData(OffsetAlignment.Right, 640)]
-    public void AlignX_FillsTheOffsetForTheDisplay(OffsetAlignment alignment, int expected)
+    [Fact]
+    public void OldCustomSettings_KeepTheirExactOffset()
     {
         var editor = EditorFor(new WindowPlacement(1280, 720, 100));
 
-        Assert.True(editor.AlignXCommand.CanExecute(alignment));
-        editor.AlignXCommand.Execute(alignment);
+        Assert.True(editor.IsAnchorOffset);
+        Assert.True(editor.ShowOffsetX);
+        Assert.Equal(100, editor.Preview!.X);
+        Assert.Equal(HorizontalAnchor.Offset, editor.ToSettings()!.Horizontal);
+    }
 
-        Assert.Equal(expected.ToString(System.Globalization.CultureInfo.CurrentCulture), editor.OffsetXText);
+    [Theory]
+    [InlineData(HorizontalAnchor.Left, VerticalAnchor.Top, 0, 0)]
+    [InlineData(HorizontalAnchor.Right, VerticalAnchor.Bottom, 640, 360)]
+    [InlineData(HorizontalAnchor.Center, VerticalAnchor.Center, 320, 180)]
+    public void Anchors_AreSaved_AndShownInThePreview(HorizontalAnchor horizontal, VerticalAnchor vertical, int x, int y)
+    {
+        var editor = EditorFor(new WindowPlacement(1280, 720, 100));
+
+        editor.Horizontal = horizontal;
+        editor.Vertical = vertical;
+
+        Assert.False(editor.ShowOffsetX);
+        Assert.Equal((x, y), (editor.Preview!.X, editor.Preview.Y));
+        Assert.Equal((horizontal, vertical), (editor.ToSettings()!.Horizontal, editor.ToSettings()!.Vertical));
+        Assert.True(editor.IsEdit(nameof(PlacementEditorViewModel.Horizontal)));
+        Assert.True(editor.IsEdit(nameof(PlacementEditorViewModel.Vertical)));
+    }
+
+    [Fact]
+    public void WithAnAnchor_TheOffsetNoLongerCounts()
+    {
+        var editor = EditorFor(new WindowPlacement(1280, 720, 100));
+
+        editor.OffsetXText = "abc";
+        Assert.False(editor.IsValid);
+
+        // The hidden field's error would block saving otherwise; a too large offset doesn't matter either
+        editor.Horizontal = HorizontalAnchor.Right;
+        Assert.Null(editor.OffsetXError);
         Assert.True(editor.IsValid);
     }
 
     [Fact]
-    public void AlignX_IsDisabled_ForAWidthThatDoesNotFit()
+    public void ExactOffset_IsOnlyForCustom()
     {
-        var editor = EditorFor(new WindowPlacement(1280, 720, 0));
+        var editor = EditorFor(new WindowPlacement(1280, 720, 100));
 
-        editor.WidthText = "2000";
+        editor.IsAutomatic = true;
 
-        Assert.False(editor.AlignXCommand.CanExecute(OffsetAlignment.Right));
+        Assert.True(editor.IsAnchorCenterX);   // Automatic has no offset: centered
+        Assert.Equal(HorizontalAnchor.Center, editor.ToSettings()!.Horizontal);
+
+        editor.IsCustom = true;
+        Assert.True(editor.IsAnchorOffset);    // still chosen for Custom
+    }
+
+    [Fact]
+    public void Summary_SaysWhereTheWindowIs()
+    {
+        var editor = EditorFor(new WindowPlacement(1280, 720, 100));
+        editor.Horizontal = HorizontalAnchor.Left;
+        editor.Vertical = VerticalAnchor.Top;
+
+        Assert.Contains("1280 × 720", editor.Summary);
+        Assert.Contains(ForceBorderlessWindowed.Resources.Strings.Placement_Position_Left, editor.Summary);
+        Assert.Contains(ForceBorderlessWindowed.Resources.Strings.Placement_Position_Top, editor.Summary);
     }
 
     [Fact]

@@ -80,6 +80,33 @@ public sealed class SettingsServiceTests : IDisposable
     }
 
     [Fact]
+    public void Positions_AreReadAndWrittenAsNames_UnknownOnesAreRepaired()
+    {
+        var service = Load("""
+            {
+              "games": [
+                { "executableName": "old.exe", "placement": { "mode": "Custom", "custom": { "width": 1280, "height": 720, "offsetX": 100 } } },
+                { "executableName": "new.exe", "placement": { "horizontal": "Right", "vertical": "Bottom" } },
+                { "executableName": "odd.exe", "placement": { "horizontal": "Diagonal", "vertical": "Sideways" } }
+              ]
+            }
+            """);
+        var games = service.Current.Games;
+
+        // Older file without the keys: Custom keeps its offset, as before; stored explicitly, as the editor saves it
+        Assert.Equal(HorizontalAnchor.Offset, games[0].Placement!.Horizontal);
+        Assert.Equal((HorizontalAnchor.Right, VerticalAnchor.Bottom), (games[1].Placement!.Horizontal, games[1].Placement!.Vertical));
+        Assert.Equal((HorizontalAnchor.Center, VerticalAnchor.Center), (games[2].Placement!.Horizontal, games[2].Placement!.Vertical));
+        Assert.Equal(HorizontalAnchor.Center, service.Current.DefaultPlacement.Horizontal);
+
+        service.Save(service.Current);
+        var json = File.ReadAllText(Path.Combine(_folder, "settings.json"));
+        Assert.Contains("\"horizontal\": \"Right\"", json);
+        Assert.Contains("\"vertical\": \"Bottom\"", json);
+        Assert.Equal(service.Current.Games[1].Placement, Load().Current.Games[1].Placement);
+    }
+
+    [Fact]
     public void GamesFromOlderVersions_GetIds_AndRepeatedIdsAreReplaced()
     {
         var games = Load("""
@@ -166,7 +193,8 @@ public sealed class SettingsServiceTests : IDisposable
                     DisplayName = "Game",
                     Enabled = false,
                     LockCursor = true,
-                    Placement = new PlacementSettings { Mode = PlacementMode.Custom, Custom = new WindowPlacement(1280, 720, 0) },
+                    Placement = new PlacementSettings { Mode = PlacementMode.Custom, Custom = new WindowPlacement(1280, 720, 0),
+                        Horizontal = HorizontalAnchor.Right, Vertical = VerticalAnchor.Top },
                 },
             ],
             Hotkeys = new HotkeySettings { TogglePause = new Hotkey(ModifierKeys.Control | ModifierKeys.Alt, Key.P) },
