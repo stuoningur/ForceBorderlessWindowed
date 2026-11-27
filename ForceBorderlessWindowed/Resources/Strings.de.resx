@@ -922,4 +922,28 @@
   <data name="Placement_Position_Bottom" xml:space="preserve">
     <value>unten</value>
   </data>
+  <data name="Placement_Presets" xml:space="preserve">
+    <value>Vorlagen</value>
+  </data>
+  <data name="Placement_Presets_Tooltip" xml:space="preserve">
+    <value>Trägt eine gängige Platzierung für den gewählten Bildschirm ein. Danach lässt sich alles ändern.</value>
+  </data>
+  <data name="Placement_Preset_FillDisplay" xml:space="preserve">
+    <value>Ganzer Bildschirm</value>
+  </data>
+  <data name="Placement_Preset_Centered16x9" xml:space="preserve">
+    <value>16:9, mittig</value>
+  </data>
+  <data name="Placement_Preset_Left16x9" xml:space="preserve">
+    <value>16:9 links</value>
+  </data>
+  <data name="Placement_Preset_Right16x9" xml:space="preserve">
+    <value>16:9 rechts</value>
+  </data>
+  <data name="Placement_Preset_LeftHalf" xml:space="preserve">
+    <value>Linke Hälfte</value>
+  </data>
+  <data name="Placement_Preset_RightHalf" xml:space="preserve">
+    <value>Rechte Hälfte</value>
+  </data>
 </root>

@@ -93,6 +93,48 @@ public class PlacementEditorViewModelTests
         Assert.True(editor.IsAnchorOffset);    // still chosen for Custom
     }
 
+    [Theory]
+    [InlineData(PlacementPreset.FillDisplay, PlacementMode.Custom, 1920, 1080, HorizontalAnchor.Center)]
+    [InlineData(PlacementPreset.LeftHalf, PlacementMode.Custom, 960, 1080, HorizontalAnchor.Left)]
+    [InlineData(PlacementPreset.RightHalf, PlacementMode.Custom, 960, 1080, HorizontalAnchor.Right)]
+    [InlineData(PlacementPreset.Centered16x9, PlacementMode.Automatic, 0, 0, HorizontalAnchor.Center)]
+    [InlineData(PlacementPreset.Left16x9, PlacementMode.Automatic, 0, 0, HorizontalAnchor.Left)]
+    [InlineData(PlacementPreset.Right16x9, PlacementMode.Automatic, 0, 0, HorizontalAnchor.Right)]
+    public void Presets_FillInTheEditor(PlacementPreset preset, PlacementMode mode, int width, int height, HorizontalAnchor horizontal)
+    {
+        // Start from something else entirely: 4:3, kept shape, bottom
+        var editor = new PlacementEditorViewModel(new PlacementSettings
+        {
+            Mode = PlacementMode.GameSize, AspectRatio = AspectRatio.Standard4x3, KeepAspectRatio = true, Vertical = VerticalAnchor.Bottom,
+        }, defaultEditor: null);
+        editor.SetDisplays([new DisplayInfo("a", "A", 1, FullHd, IsPrimary: true)], FullHd);
+
+        Assert.True(editor.ApplyPresetCommand.CanExecute(preset));
+        editor.ApplyPresetCommand.Execute(preset);
+
+        var settings = editor.ToSettings()!;
+        Assert.Equal(mode, settings.Mode);
+        Assert.Equal((horizontal, VerticalAnchor.Center), (settings.Horizontal, settings.Vertical));
+        if (mode == PlacementMode.Custom)
+        {
+            Assert.Equal((width, height), (settings.Custom!.Width, settings.Custom.Height));
+        }
+        else
+        {
+            Assert.Equal((AspectRatio.Widescreen16x9, false), (settings.AspectRatio, settings.KeepAspectRatio));
+        }
+
+        Assert.True(editor.IsValid);
+    }
+
+    [Fact]
+    public void Presets_NeedTheDisplays()
+    {
+        var editor = new PlacementEditorViewModel(new PlacementSettings(), defaultEditor: null);
+
+        Assert.False(editor.ApplyPresetCommand.CanExecute(PlacementPreset.LeftHalf));
+    }
+
     [Fact]
     public void Summary_SaysWhereTheWindowIs()
     {

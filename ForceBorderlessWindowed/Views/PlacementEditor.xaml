@@ -24,10 +24,41 @@
                                    AutomationProperties.Name="{x:Static res:Strings.Placement_Preview}"
                                    AutomationProperties.HelpText="{Binding Summary}" />
 
-        <!-- Briefly outlines the placement on the real monitor -->
-        <StackPanel Margin="0,0,0,16" Orientation="Horizontal"
-                    Visibility="{Binding CanShowOnDisplay, Converter={StaticResource BoolToVisibility}}">
-            <Button MinWidth="88" Command="{Binding ShowOnDisplayCommand}"
+        <!-- Briefly outlines the placement on the real monitor; next to it, common placements to start from -->
+        <WrapPanel Margin="0,0,0,8" Orientation="Horizontal">
+            <!-- Opens a menu of presets (OnPresetsClick). The chevron says "this opens a menu". -->
+            <Button x:Name="PresetsButton" MinWidth="88" Margin="0,0,8,8" Click="OnPresetsClick"
+                    ToolTip="{x:Static res:Strings.Placement_Presets_Tooltip}"
+                    AutomationProperties.Name="{x:Static res:Strings.Placement_Presets}"
+                    AutomationProperties.HelpText="{x:Static res:Strings.Placement_Presets_Tooltip}">
+                <Button.ContextMenu>
+                    <!-- Takes the button's DataContext (the editor), like any ContextMenu set on an element -->
+                    <ContextMenu ItemsSource="{Binding Presets}">
+                        <ContextMenu.ItemContainerStyle>
+                            <Style TargetType="MenuItem" BasedOn="{StaticResource {x:Type MenuItem}}">
+                                <Setter Property="Command" Value="{Binding DataContext.ApplyPresetCommand, RelativeSource={RelativeSource AncestorType=ContextMenu}}" />
+                                <Setter Property="CommandParameter" Value="{Binding Preset}" />
+                                <!-- Otherwise a screen reader reads the item's record text ("PresetOption { … }") -->
+                                <Setter Property="AutomationProperties.Name" Value="{Binding Label}" />
+                            </Style>
+                        </ContextMenu.ItemContainerStyle>
+                        <!-- A TextBlock, not the plain string: no access keys from "_" -->
+                        <ContextMenu.ItemTemplate>
+                            <DataTemplate DataType="{x:Type vm:PresetOption}">
+                                <TextBlock Text="{Binding Label}" />
+                            </DataTemplate>
+                        </ContextMenu.ItemTemplate>
+                    </ContextMenu>
+                </Button.ContextMenu>
+                <StackPanel Orientation="Horizontal">
+                    <controls:FontIcon Margin="0,0,8,0" Style="{StaticResource IconTextStyle}" Text="&#xE8A1;" />   <!-- PreviewLink: a window layout -->
+                    <TextBlock Text="{x:Static res:Strings.Placement_Presets}" />
+                    <controls:FontIcon Margin="8,0,0,0" Style="{StaticResource IconTextStyle}" FontSize="12" Text="&#xE70D;" />
+                </StackPanel>
+            </Button>
+
+            <Button MinWidth="88" Margin="0,0,0,8" Command="{Binding ShowOnDisplayCommand}"
+                    Visibility="{Binding CanShowOnDisplay, Converter={StaticResource BoolToVisibility}}"
                     ToolTip="{x:Static res:Strings.Placement_ShowOnDisplay_Tooltip}"
                     AutomationProperties.Name="{x:Static res:Strings.Placement_ShowOnDisplay}"
                     AutomationProperties.HelpText="{x:Static res:Strings.Placement_ShowOnDisplay_Tooltip}">
@@ -36,10 +67,10 @@
                     <TextBlock Text="{x:Static res:Strings.Placement_ShowOnDisplay}" />
                 </StackPanel>
             </Button>
-            <TextBlock Margin="12,0,0,0" VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
+            <TextBlock Margin="12,0,0,8" VerticalAlignment="Center" Style="{StaticResource SecondaryTextStyle}"
                        Text="{x:Static res:Strings.Placement_ShowOnDisplay_NeedsGame}"
                        Visibility="{Binding ShowOnDisplayNeedsGame, Converter={StaticResource BoolToVisibility}}" />
-        </StackPanel>
+        </WrapPanel>
 
         <!-- Which display: applies to every option, so it sits above them, next to the drawing of it.
              With "Use default" the default's display applies: then a text says which one, in the same room

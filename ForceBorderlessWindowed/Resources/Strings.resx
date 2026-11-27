@@ -926,4 +926,28 @@
   <data name="Placement_Position_Bottom" xml:space="preserve">
     <value>bottom</value>
   </data>
+  <data name="Placement_Presets" xml:space="preserve">
+    <value>Presets</value>
+  </data>
+  <data name="Placement_Presets_Tooltip" xml:space="preserve">
+    <value>Fills in a common placement for the selected display. You can change everything afterwards.</value>
+  </data>
+  <data name="Placement_Preset_FillDisplay" xml:space="preserve">
+    <value>Fill the display</value>
+  </data>
+  <data name="Placement_Preset_Centered16x9" xml:space="preserve">
+    <value>16:9, centered</value>
+  </data>
+  <data name="Placement_Preset_Left16x9" xml:space="preserve">
+    <value>16:9 on the left</value>
+  </data>
+  <data name="Placement_Preset_Right16x9" xml:space="preserve">
+    <value>16:9 on the right</value>
+  </data>
+  <data name="Placement_Preset_LeftHalf" xml:space="preserve">
+    <value>Left half</value>
+  </data>
+  <data name="Placement_Preset_RightHalf" xml:space="preserve">
+    <value>Right half</value>
+  </data>
 </root>

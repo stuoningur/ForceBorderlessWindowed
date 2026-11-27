@@ -19,6 +19,20 @@ public enum PlacementChoice
     GameSize,
 }
 
+/// <summary>Common placements the editor can fill in at once, see <see cref="PlacementEditorViewModel.ApplyPresetCommand"/>.</summary>
+public enum PlacementPreset
+{
+    FillDisplay,
+    Centered16x9,
+    Left16x9,
+    Right16x9,
+    LeftHalf,
+    RightHalf,
+}
+
+/// <summary>An entry of the presets menu.</summary>
+public sealed record PresetOption(PlacementPreset Preset, string Label);
+
 /// <summary>
 /// Editor for a <see cref="PlacementSettings"/>. Used for the global default (no "Use default" option)
 /// and for each game (with "Use default", which then shows what the default currently resolves to).
@@ -329,6 +343,63 @@ public partial class PlacementEditorViewModel : ObservableObject
     }
 
     partial void OnVerticalChanged(VerticalAnchor value) => OnSummaryChanged();
+
+    public IReadOnlyList<PresetOption> Presets { get; } =
+    [
+        new(PlacementPreset.FillDisplay, Strings.Placement_Preset_FillDisplay),
+        new(PlacementPreset.Centered16x9, Strings.Placement_Preset_Centered16x9),
+        new(PlacementPreset.Left16x9, Strings.Placement_Preset_Left16x9),
+        new(PlacementPreset.Right16x9, Strings.Placement_Preset_Right16x9),
+        new(PlacementPreset.LeftHalf, Strings.Placement_Preset_LeftHalf),
+        new(PlacementPreset.RightHalf, Strings.Placement_Preset_RightHalf),
+    ];
+
+    /// <summary>
+    /// Fills in a common placement, once: afterwards the mode, size and position are ordinary choices that can be
+    /// changed. Sizes in pixels (the halves, the whole display) come from the previewed display.
+    /// </summary>
+    [RelayCommand(CanExecute = nameof(CanApplyPreset))]
+    private void ApplyPreset(PlacementPreset preset)
+    {
+        if (_monitor is not { } monitor)
+        {
+            return;
+        }
+
+        switch (preset)
+        {
+            case PlacementPreset.FillDisplay:
+                FillCustom(monitor.Width, monitor.Height, HorizontalAnchor.Center);
+                break;
+            case PlacementPreset.LeftHalf or PlacementPreset.RightHalf:
+                FillCustom(monitor.Width / 2, monitor.Height,
+                    preset == PlacementPreset.LeftHalf ? HorizontalAnchor.Left : HorizontalAnchor.Right);
+                break;
+            default:
+                Choice = PlacementChoice.Automatic;
+                SelectedAspectRatio = AspectRatios.First(r => r.Ratio == AspectRatio.Widescreen16x9);
+                KeepAspectRatio = false;
+                Horizontal = preset switch
+                {
+                    PlacementPreset.Left16x9 => HorizontalAnchor.Left,
+                    PlacementPreset.Right16x9 => HorizontalAnchor.Right,
+                    _ => HorizontalAnchor.Center,
+                };
+                break;
+        }
+
+        Vertical = VerticalAnchor.Center;
+    }
+
+    private bool CanApplyPreset() => _monitor is not null;
+
+    private void FillCustom(int width, int height, HorizontalAnchor horizontal)
+    {
+        WidthText = width.ToString(CultureInfo.CurrentCulture);
+        HeightText = height.ToString(CultureInfo.CurrentCulture);
+        Choice = PlacementChoice.Custom;
+        Horizontal = horizontal;
+    }
 
     /// <summary>Where a window of this size goes on <paramref name="monitor"/> with this editor's position choice.</summary>
     private WindowRect Place(WindowPlacement size, MonitorBounds monitor) =>
@@ -733,6 +804,7 @@ public partial class PlacementEditorViewModel : ObservableObject
         OnPropertyChanged(nameof(Preview));
         OnPropertyChanged(nameof(CanFitToDisplay));
         FitToDisplayCommand.NotifyCanExecuteChanged();
+        ApplyPresetCommand.NotifyCanExecuteChanged();   // needs the monitor, which is set right before this
     }
 
     /// <summary>Hands a valid number to <paramref name="apply"/>; returns the field's error, or null.</summary>
