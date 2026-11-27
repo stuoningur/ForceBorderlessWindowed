@@ -73,7 +73,7 @@ dotnet publish ForceBorderlessWindowed -p:PublishProfile=Portable
 
 The last command builds the release exe into `ForceBorderlessWindowed\bin\Publish\`.
 
-Releases are built by GitHub Actions: pushing a tag like `v0.9.0-beta` that matches `<Version>` in `ForceBorderlessWindowed.csproj` creates a draft release with the exe and its checksum.
+Releases are built by GitHub Actions: add the version's section to [CHANGELOG.md](CHANGELOG.md), then push a tag like `v0.10.0-beta` that matches `<Version>` in `ForceBorderlessWindowed.csproj`. That creates a draft release with the exe, its checksum and the changelog section as release notes.
 
 ## License
 

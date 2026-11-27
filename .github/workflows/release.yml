@@ -1,8 +1,9 @@
 name: Release
 
-# Push a tag that matches <Version> in ForceBorderlessWindowed.csproj, e.g.:
-#   git tag v0.9.0-beta
-#   git push origin v0.9.0-beta
+# First add the version's section to CHANGELOG.md (the release notes come from it), then push a tag that matches
+# <Version> in ForceBorderlessWindowed.csproj, e.g.:
+#   git tag v0.10.0-beta
+#   git push origin v0.10.0-beta
 # The result is a draft release: check the notes on GitHub, then publish it.
 on:
   push:
@@ -34,6 +35,13 @@ jobs:
           }
           "version=$version" | Out-File $env:GITHUB_OUTPUT -Append -Encoding utf8
 
+      # Before the build: a release without its changelog section stops here
+      - name: CHANGELOG.md has a section for this version
+        shell: pwsh
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: ./.github/scripts/Get-ChangelogSection.ps1 -Version $env:VERSION | Out-Null
+
   build:
     needs: check-version
     uses: ./.github/workflows/ci.yml
@@ -51,12 +59,23 @@ jobs:
           name: ForceBorderlessWindowed
           path: release
 
+      # Unix line ending: "sha256sum -c" on Linux and macOS reads a CR as part of the file name
       - name: Checksum
         shell: pwsh
         working-directory: release
         run: |
           $hash = (Get-FileHash ForceBorderlessWindowed.exe -Algorithm SHA256).Hash.ToLowerInvariant()
-          "$hash  ForceBorderlessWindowed.exe" | Out-File SHA256SUMS.txt -Encoding ascii
+          [IO.File]::WriteAllText("$PWD/SHA256SUMS.txt", "$hash  ForceBorderlessWindowed.exe`n", [Text.Encoding]::ASCII)
+
+      # The version's CHANGELOG.md section, then the download notes that every release repeats
+      - name: Release notes
+        shell: pwsh
+        env:
+          VERSION: ${{ needs.check-version.outputs.version }}
+        run: |
+          $section = ./.github/scripts/Get-ChangelogSection.ps1 -Version $env:VERSION
+          $footer = Get-Content .github/release-notes-footer.md -Raw -Encoding utf8
+          [IO.File]::WriteAllText("$PWD/release/notes.md", ($section -join "`n") + "`n" + $footer, [Text.UTF8Encoding]::new($false))
 
       # A version with a suffix ("0.9.0-beta") is marked as a pre-release
       - name: Create draft release
@@ -68,7 +87,7 @@ jobs:
           $arguments = @(
             'release', 'create', $env:GITHUB_REF_NAME,
             'release/ForceBorderlessWindowed.exe', 'release/SHA256SUMS.txt',
-            '--draft', '--generate-notes', '--verify-tag',
+            '--draft', '--notes-file', 'release/notes.md', '--verify-tag',
             '--title', "Force Borderless Windowed $env:VERSION"
           )
           if ($env:VERSION.Contains('-')) { $arguments += '--prerelease' }
