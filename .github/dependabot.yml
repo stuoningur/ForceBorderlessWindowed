@@ -5,8 +5,11 @@ updates:
     schedule:
       interval: weekly
     ignore:
-      # The app targets .NET 10: Microsoft.Extensions stays on 10.x to match the runtime it runs on
+      # The app targets .NET 10: Microsoft.Extensions stays on 10.x to match the runtime it runs on.
+      # Serilog.Extensions.* follows the Microsoft.Extensions major version and would pull in 11.x, so it stays too.
       - dependency-name: Microsoft.Extensions.*
+        update-types: [version-update:semver-major]
+      - dependency-name: Serilog.Extensions.*
         update-types: [version-update:semver-major]
     groups:
       # Test packages are updated together in one pull request
