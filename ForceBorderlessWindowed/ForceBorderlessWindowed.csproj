@@ -11,7 +11,7 @@
     <NoWarn>$(NoWarn);WPF0001</NoWarn>
     <!-- Shown as is in About and the log. The number part (0.9.0) is what the version handover compares
          (see SingleInstance), so every release needs a higher number, not just a different suffix. -->
-    <Version>0.9.0-beta</Version>
+    <Version>0.10.0-beta</Version>
     <Product>Force Borderless Windowed</Product>
     <!-- The exe's "File description": the name Task Manager shows, also on its Startup apps page -->
     <AssemblyTitle>Force Borderless Windowed</AssemblyTitle>
